@@ -47,6 +47,9 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -U platformio
+          # pioarduino ships esptool 5.0.0-dev1, which breaks on click>=8.2
+          # (ParamType.get_metavar requires ctx). Pin until tool-esptoolpy updates.
+          pip install "click>=8.1.7,<8.2"
 
       - name: Native unit tests (no hardware)
         run: pio test -e native -v
