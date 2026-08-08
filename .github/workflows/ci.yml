@@ -69,13 +69,14 @@ jobs:
           python-version: "3.11"
 
       - name: Validate openapi.yaml parses as YAML + OpenAPI 3
+        # defaults.run.working-directory is usb-hid-s3
         run: |
           pip install pyyaml
           python - <<'PY'
           from pathlib import Path
           import yaml
 
-          path = Path("usb-hid-s3/docs/openapi.yaml")
+          path = Path("docs/openapi.yaml")
           doc = yaml.safe_load(path.read_text(encoding="utf-8"))
           assert isinstance(doc, dict), "root must be a mapping"
           assert str(doc.get("openapi", "")).startswith("3."), f"expected OpenAPI 3.x, got {doc.get('openapi')!r}"
