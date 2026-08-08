@@ -1,0 +1,97 @@
+# Cloud-runnable checks for usb-hid-s3 (no Mac / no physical board).
+# On-device pytest (integration, HID E2E, WiFi, BLE, mDNS) stays local-only.
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: usb-hid-s3
+
+jobs:
+  firmware:
+    name: Native unit tests + firmware build
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cache PlatformIO
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio/.cache
+            ~/.platformio/packages
+            ~/.platformio/platforms
+            ~/.platformio/penv
+          key: pio-${{ runner.os }}-${{ hashFiles('usb-hid-s3/platformio.ini') }}
+          restore-keys: |
+            pio-${{ runner.os }}-
+
+      - name: Install PlatformIO
+        run: |
+          python -m pip install --upgrade pip
+          pip install -U platformio
+
+      - name: Native unit tests (no hardware)
+        run: pio test -e native -v
+
+      - name: Build esp32s3 firmware
+        run: pio run -e esp32s3
+
+  openapi:
+    name: OpenAPI lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Validate openapi.yaml parses as YAML + OpenAPI 3
+        run: |
+          pip install pyyaml
+          python - <<'PY'
+          from pathlib import Path
+          import yaml
+
+          path = Path("usb-hid-s3/docs/openapi.yaml")
+          doc = yaml.safe_load(path.read_text(encoding="utf-8"))
+          assert isinstance(doc, dict), "root must be a mapping"
+          assert str(doc.get("openapi", "")).startswith("3."), f"expected OpenAPI 3.x, got {doc.get('openapi')!r}"
+          assert "paths" in doc and doc["paths"], "paths must be non-empty"
+          assert "info" in doc and doc["info"].get("title"), "info.title required"
+          required = [
+              "/api/status",
+              "/api/jiggle",
+              "/api/move",
+              "/api/type",
+              "/api/key",
+              "/api/click",
+              "/api/wifi",
+              "/api/wifi/clear",
+          ]
+          missing = [p for p in required if p not in doc["paths"]]
+          assert not missing, f"missing paths: {missing}"
+          print(f"OK: {path} openapi={doc['openapi']} paths={len(doc['paths'])}")
+          PY

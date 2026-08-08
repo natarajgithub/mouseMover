@@ -24,6 +24,18 @@ curl http://hid-helper.local/api/status
 See [`usb-hid-s3/README.md`](usb-hid-s3/README.md) for commands, REST API, LED legend, and tests.  
 OpenAPI spec: [`usb-hid-s3/docs/openapi.yaml`](usb-hid-s3/docs/openapi.yaml).
 
+## CI
+
+GitHub Actions (`.github/workflows/ci.yml`) runs on every PR and on pushes to
+`main`:
+
+- PlatformIO **native unit tests** (`pio test -e native`)
+- **esp32s3 firmware compile** (`pio run -e esp32s3`)
+- OpenAPI YAML sanity check
+
+On-device pytest (serial / HID E2E / WiFi / BLE / mDNS) requires a Mac + board
+and is not run in CI.
+
 ## Secrets
 
 Do **not** commit:
