@@ -1,0 +1,20 @@
+# PlatformIO
+.pio/
+.pioenvs/
+.piolibdeps/
+
+# Local machine config
+config.env
+
+# WiFi credentials (never commit secrets)
+include/wifi_secrets.h
+
+# Test artifacts
+tests/output/
+.pytest_cache/
+__pycache__/
+*.pyc
+
+# Editor / OS
+.vscode/
+.DS_Store

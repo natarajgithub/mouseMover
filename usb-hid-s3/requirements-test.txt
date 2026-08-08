@@ -1,0 +1,4 @@
+pytest>=8.0
+pyserial>=3.5
+# macOS E2E: read cursor position + capture HID keystroke/mouse events (CGEventTap)
+pyobjc-framework-Quartz>=10.0 ; sys_platform == "darwin"
