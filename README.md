@@ -21,7 +21,8 @@ pio run -e esp32s3 -t upload                                 # BOOT+RESET for na
 curl http://hid-helper.local/api/status
 ```
 
-See [`usb-hid-s3/README.md`](usb-hid-s3/README.md) for commands, REST API, LED legend, and tests.
+See [`usb-hid-s3/README.md`](usb-hid-s3/README.md) for commands, REST API, LED legend, and tests.  
+OpenAPI spec: [`usb-hid-s3/docs/openapi.yaml`](usb-hid-s3/docs/openapi.yaml).
 
 ## Secrets
 

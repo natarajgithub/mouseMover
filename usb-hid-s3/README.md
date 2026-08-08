@@ -67,6 +67,9 @@ on port 80), so apps can discover it without a hard-coded IP.
 | Dim solid green | STA connected, jiggle **off** |
 | Cyan breathing | STA connected, jiggle **on** |
 
+OpenAPI / Swagger: [`docs/openapi.yaml`](docs/openapi.yaml)  
+(Paste into [Swagger Editor](https://editor.swagger.io/) or generate clients from it.)
+
 Example:
 
 ```bash

@@ -1,0 +1,605 @@
+openapi: 3.0.3
+info:
+  title: mouseMover / usb-hid-s3 HTTP API
+  description: |
+    REST control and WiFi provisioning for the ESP32-S3 USB HID helper.
+
+    **Discovery**
+    - STA (home WiFi): `http://hid-helper.local` (mDNS) or `http://<sta-ip>`
+    - Soft-AP setup: join WiFi `usb-hid-s3-setup` (open), then `http://192.168.4.1`
+
+    All JSON endpoints send CORS headers (`Access-Control-Allow-Origin: *`)
+    for browser / future mobile apps. Control routes feed the same command
+    sink as USB serial and TCP `:3333`.
+  version: 0.3.3
+  contact:
+    name: mouseMover
+    url: https://github.com/natarajgithub/mouseMover
+
+servers:
+  - url: http://hid-helper.local
+    description: STA via mDNS (preferred)
+  - url: http://192.168.4.1
+    description: Soft-AP setup portal
+  - url: http://{sta_ip}
+    description: STA via DHCP IP
+    variables:
+      sta_ip:
+        default: 192.168.2.161
+        description: Device IPv4 from GET /api/status or /api/wifi
+
+tags:
+  - name: status
+    description: Device health and discovery metadata
+  - name: control
+    description: USB HID mouse / keyboard / jiggle actions
+  - name: wifi
+    description: NVS WiFi credentials and Soft-AP provisioning
+
+paths:
+  /:
+    get:
+      tags: [status]
+      summary: Root index or Soft-AP setup page
+      description: |
+        On Soft-AP returns an HTML WiFi setup form.
+        On STA returns a JSON API index listing endpoints.
+      responses:
+        "200":
+          description: HTML (Soft-AP) or JSON index (STA)
+          content:
+            text/html:
+              schema:
+                type: string
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiIndex"
+
+  /api/status:
+    get:
+      tags: [status]
+      summary: Device status
+      operationId: getStatus
+      responses:
+        "200":
+          description: Current device status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeviceStatus"
+              example:
+                ok: true
+                name: usb-hid-s3
+                version: "0.3.3"
+                uptime_s: 120
+                heap: 192000
+                usb: ready
+                jiggle: false
+                jiggle_interval_ms: 10000
+                sta_ip: 192.168.2.161
+                mdns: hid-helper.local
+    options:
+      tags: [status]
+      summary: CORS preflight
+      responses:
+        "204":
+          description: No content
+
+  /api/jiggle:
+    get:
+      tags: [control]
+      summary: Jiggle state
+      operationId: getJiggle
+      responses:
+        "200":
+          description: Current jiggle settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JiggleStatus"
+    post:
+      tags: [control]
+      summary: Enable or disable auto mouse jiggle
+      operationId: setJiggle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JiggleRequest"
+            examples:
+              enable:
+                value: { enabled: true }
+              disable:
+                value: { enabled: false }
+      responses:
+        "200":
+          description: Applied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JiggleSetResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+    options:
+      tags: [control]
+      summary: CORS preflight
+      responses:
+        "204":
+          description: No content
+
+  /api/move:
+    post:
+      tags: [control]
+      summary: Relative mouse move
+      operationId: moveMouse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MoveRequest"
+            example:
+              dx: 40
+              dy: 0
+              wheel: 0
+      responses:
+        "200":
+          description: Move accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MoveResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+    options:
+      tags: [control]
+      summary: CORS preflight
+      responses:
+        "204":
+          description: No content
+
+  /api/type:
+    post:
+      tags: [control]
+      summary: Type a string via USB keyboard HID
+      operationId: typeText
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TypeRequest"
+            example:
+              text: hello
+      responses:
+        "200":
+          description: Type accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TypeResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+    options:
+      tags: [control]
+      summary: CORS preflight
+      responses:
+        "204":
+          description: No content
+
+  /api/key:
+    post:
+      tags: [control]
+      summary: Press a named key or combo
+      description: |
+        Key names match the serial `key` command (e.g. `enter`, `esc`, `tab`,
+        `up`, `cmd+space`, `ctrl+shift+t`).
+      operationId: pressKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/KeyRequest"
+            examples:
+              enter:
+                value: { key: enter }
+              spotlight:
+                value: { key: cmd+space }
+      responses:
+        "200":
+          description: Key accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KeyResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+    options:
+      tags: [control]
+      summary: CORS preflight
+      responses:
+        "204":
+          description: No content
+
+  /api/click:
+    post:
+      tags: [control]
+      summary: Mouse button click
+      operationId: clickMouse
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClickRequest"
+            example:
+              button: left
+      responses:
+        "200":
+          description: Click accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClickResponse"
+    options:
+      tags: [control]
+      summary: CORS preflight
+      responses:
+        "204":
+          description: No content
+
+  /api/wifi:
+    get:
+      tags: [wifi]
+      summary: WiFi / Soft-AP status
+      operationId: getWifi
+      responses:
+        "200":
+          description: WiFi configuration and interface state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WifiStatus"
+              examples:
+                sta:
+                  value:
+                    mode: sta
+                    configured: true
+                    ssid: MyNetwork
+                    ap_ssid: usb-hid-s3-setup
+                    ap_ip: 192.168.4.1
+                    sta_ip: 192.168.2.161
+                    http_port: 80
+                    control_port: 3333
+                softAp:
+                  value:
+                    mode: ap
+                    configured: false
+                    ssid: ""
+                    ap_ssid: usb-hid-s3-setup
+                    ap_ip: 192.168.4.1
+                    sta_ip: ""
+                    http_port: 80
+                    control_port: 3333
+    post:
+      tags: [wifi]
+      summary: Save WiFi credentials and reconnect
+      description: |
+        Persists SSID/password to NVS, then reconnects as STA.
+        Typical Soft-AP provisioning flow for first-time / forgotten WiFi.
+      operationId: setWifi
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WifiSetRequest"
+            example:
+              ssid: MyNetwork
+              password: secret
+      responses:
+        "200":
+          description: Saved; reconnect pending
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WifiSetResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/ServerError"
+    options:
+      tags: [wifi]
+      summary: CORS preflight
+      responses:
+        "204":
+          description: No content
+
+  /api/wifi/clear:
+    post:
+      tags: [wifi]
+      summary: Forget WiFi credentials
+      description: |
+        Clears NVS STA credentials. Device reconnects into Soft-AP setup mode
+        (`usb-hid-s3-setup`) so credentials can be provisioned again.
+      operationId: clearWifi
+      responses:
+        "200":
+          description: Cleared; reconnect pending (Soft-AP)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WifiClearResponse"
+              example:
+                ok: true
+                cleared: true
+                reconnecting: true
+    options:
+      tags: [wifi]
+      summary: CORS preflight
+      responses:
+        "204":
+          description: No content
+
+components:
+  responses:
+    BadRequest:
+      description: Invalid request body
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    ServerError:
+      description: Server / NVS failure
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+  schemas:
+    Error:
+      type: object
+      required: [ok, error]
+      properties:
+        ok:
+          type: boolean
+          enum: [false]
+        error:
+          type: string
+          example: ssid required
+
+    ApiIndex:
+      type: object
+      properties:
+        name:
+          type: string
+          example: usb-hid-s3
+        version:
+          type: string
+          example: "0.3.3"
+        endpoints:
+          type: array
+          items:
+            type: string
+
+    DeviceStatus:
+      type: object
+      required: [ok, name, version]
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        name:
+          type: string
+        version:
+          type: string
+        uptime_s:
+          type: integer
+          minimum: 0
+        heap:
+          type: integer
+          minimum: 0
+        usb:
+          type: string
+          enum: [ready, not-ready]
+        jiggle:
+          type: boolean
+        jiggle_interval_ms:
+          type: integer
+        sta_ip:
+          type: string
+          description: Empty when not on STA
+        mdns:
+          type: string
+          example: hid-helper.local
+
+    JiggleStatus:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        enabled:
+          type: boolean
+        interval_ms:
+          type: integer
+          example: 10000
+
+    JiggleRequest:
+      type: object
+      required: [enabled]
+      properties:
+        enabled:
+          type: boolean
+        state:
+          type: string
+          description: Alternate form — `on` / `off` / `true` / `false`
+          enum: [on, off, "true", "false", "1", "0"]
+        jiggle:
+          type: string
+          description: Alias of `state`
+
+    JiggleSetResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        enabled:
+          type: boolean
+
+    MoveRequest:
+      type: object
+      required: [dx, dy]
+      properties:
+        dx:
+          type: integer
+          description: Relative X pixels (positive = right)
+        dy:
+          type: integer
+          description: Relative Y pixels (positive = down)
+        wheel:
+          type: integer
+          description: Scroll wheel delta
+          default: 0
+
+    MoveResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        dx:
+          type: integer
+        dy:
+          type: integer
+        wheel:
+          type: integer
+
+    TypeRequest:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+          minLength: 1
+
+    TypeResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        len:
+          type: integer
+
+    KeyRequest:
+      type: object
+      properties:
+        key:
+          type: string
+          description: Preferred field
+          example: enter
+        name:
+          type: string
+          description: Alias of `key`
+      anyOf:
+        - required: [key]
+        - required: [name]
+
+    KeyResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        key:
+          type: string
+
+    ClickRequest:
+      type: object
+      properties:
+        button:
+          type: string
+          enum: [left, right, middle]
+          default: left
+
+    ClickResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        button:
+          type: string
+
+    WifiStatus:
+      type: object
+      properties:
+        mode:
+          type: string
+          enum: [off, ap, sta, ap+sta]
+        configured:
+          type: boolean
+          description: True when NVS has a non-empty STA SSID
+        ssid:
+          type: string
+          description: Configured STA SSID (may be empty)
+        ap_ssid:
+          type: string
+          example: usb-hid-s3-setup
+        ap_ip:
+          type: string
+          example: 192.168.4.1
+        sta_ip:
+          type: string
+        http_port:
+          type: integer
+          example: 80
+        control_port:
+          type: integer
+          description: TCP line-control port (same grammar as serial)
+          example: 3333
+
+    WifiSetRequest:
+      type: object
+      required: [ssid]
+      properties:
+        ssid:
+          type: string
+          minLength: 1
+          maxLength: 32
+        password:
+          type: string
+          maxLength: 63
+          description: Empty string allowed for open networks
+        pass:
+          type: string
+          description: Alias of `password`
+
+    WifiSetResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        reconnecting:
+          type: boolean
+          enum: [true]
+        ssid:
+          type: string
+
+    WifiClearResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        cleared:
+          type: boolean
+          enum: [true]
+        reconnecting:
+          type: boolean
+          enum: [true]
