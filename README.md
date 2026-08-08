@@ -1,5 +1,9 @@
 # mouseMover
 
+[![CI](https://github.com/natarajgithub/mouseMover/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/natarajgithub/mouseMover/actions/workflows/ci.yml)
+[![Firmware + unit tests](https://img.shields.io/github/actions/workflow/status/natarajgithub/mouseMover/ci.yml?branch=main&job=Native%20unit%20tests%20%2B%20firmware%20build&label=firmware%20%2B%20unit%20tests)](https://github.com/natarajgithub/mouseMover/actions/workflows/ci.yml)
+[![OpenAPI](https://img.shields.io/github/actions/workflow/status/natarajgithub/mouseMover/ci.yml?branch=main&job=OpenAPI%20lint&label=OpenAPI)](https://github.com/natarajgithub/mouseMover/actions/workflows/ci.yml)
+
 USB HID mouse/keyboard helper (ESP32-S3) plus companion apps.
 
 ## Layout
@@ -26,8 +30,8 @@ OpenAPI spec: [`usb-hid-s3/docs/openapi.yaml`](usb-hid-s3/docs/openapi.yaml).
 
 ## CI
 
-GitHub Actions (`.github/workflows/ci.yml`) runs on every PR and on pushes to
-`main`:
+Badges above track the latest `main` workflow run. GitHub Actions
+(`.github/workflows/ci.yml`) runs on every PR and on pushes to `main`:
 
 - PlatformIO **native unit tests** (`pio test -e native`)
 - **esp32s3 firmware compile** (`pio run -e esp32s3`)
