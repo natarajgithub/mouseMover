@@ -30,6 +30,32 @@ final class DeviceAPIClientTests: XCTestCase {
         XCTAssertFalse(status.authRequired)
     }
 
+    func testDecodeLegacyStatusWithoutAuthRequired() throws {
+        // Live 0.3.3 firmware omits auth_required and device_id.
+        let json = """
+        {
+          "ok": true,
+          "name": "usb-hid-s3",
+          "version": "0.3.3",
+          "uptime_s": 46836,
+          "heap": 188864,
+          "usb": "not-ready",
+          "jiggle": true,
+          "jiggle_interval_ms": 10000,
+          "sta_ip": "192.168.2.161",
+          "mdns": "hid-helper.local"
+        }
+        """.data(using: .utf8)!
+
+        let status = try JSONDecoder().decode(DeviceStatus.self, from: json)
+
+        XCTAssertEqual(status.version, "0.3.3")
+        XCTAssertTrue(status.jiggle)
+        XCTAssertNil(status.deviceId)
+        XCTAssertFalse(status.authRequired)
+        XCTAssertEqual(status.staIp, "192.168.2.161")
+    }
+
     func testDecodeWifiStatusStubJSON() throws {
         let json = """
         {

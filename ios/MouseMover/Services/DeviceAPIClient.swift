@@ -1,10 +1,26 @@
 import Foundation
 
-enum DeviceAPIError: Error, Equatable {
+enum DeviceAPIError: Error, Equatable, LocalizedError {
     case invalidURL
     case invalidResponse
     case httpStatus(Int)
-    case decodingFailed
+    case decodingFailed(String?)
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidURL:
+            return "Could not build a URL for this device."
+        case .invalidResponse:
+            return "The device returned an invalid response."
+        case let .httpStatus(code):
+            return "Device HTTP error (\(code))."
+        case let .decodingFailed(detail):
+            if let detail, !detail.isEmpty {
+                return "Could not read device status: \(detail)"
+            }
+            return "Could not read device status JSON."
+        }
+    }
 }
 
 protocol DeviceAPIClientProtocol: Sendable {
@@ -33,7 +49,10 @@ struct DeviceAPIClient: DeviceAPIClientProtocol {
         do {
             return try decoder.decode(DeviceStatus.self, from: data)
         } catch {
-            throw DeviceAPIError.decodingFailed
+            let snippet = String(data: data, encoding: .utf8)?
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            let clipped = snippet.map { String($0.prefix(180)) }
+            throw DeviceAPIError.decodingFailed(clipped)
         }
     }
 
@@ -54,7 +73,10 @@ struct DeviceAPIClient: DeviceAPIClientProtocol {
         do {
             return try decoder.decode(WifiStatus.self, from: data)
         } catch {
-            throw DeviceAPIError.decodingFailed
+            let snippet = String(data: data, encoding: .utf8)?
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            let clipped = snippet.map { String($0.prefix(180)) }
+            throw DeviceAPIError.decodingFailed(clipped)
         }
     }
 
