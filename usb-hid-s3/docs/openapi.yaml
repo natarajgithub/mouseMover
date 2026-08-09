@@ -11,7 +11,13 @@ info:
     All JSON endpoints send CORS headers (`Access-Control-Allow-Origin: *`)
     for browser / future mobile apps. Control routes feed the same command
     sink as USB serial and TCP `:3333`.
-  version: 0.3.3
+
+    **Optional auth:** when firmware is built with a non-empty
+    `CONTROL_API_TOKEN`, protect `/api/*` with header `X-API-Token` or
+    `Authorization: Bearer <token>`. Soft-AP WiFi provisioning
+    (`GET`/`POST /api/wifi` while AP-only) stays open. TCP/BLE sessions
+    authenticate with a line: `auth <token>`.
+  version: 0.3.4
   contact:
     name: mouseMover
     url: https://github.com/natarajgithub/mouseMover
@@ -344,6 +350,17 @@ paths:
           description: No content
 
 components:
+  securitySchemes:
+    ApiToken:
+      type: apiKey
+      in: header
+      name: X-API-Token
+      description: Required only when firmware `CONTROL_API_TOKEN` is set.
+    BearerToken:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque
+
   responses:
     BadRequest:
       description: Invalid request body
@@ -378,7 +395,7 @@ components:
           example: usb-hid-s3
         version:
           type: string
-          example: "0.3.3"
+          example: "0.3.4"
         endpoints:
           type: array
           items:

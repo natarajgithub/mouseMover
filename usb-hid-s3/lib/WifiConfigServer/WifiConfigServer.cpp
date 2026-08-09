@@ -6,6 +6,7 @@
 
 #include "CommandSink.h"
 #include "Config.h"
+#include "ControlAuth.h"
 #include "Logging.h"
 #include "WifiCredentials.h"
 
@@ -120,7 +121,33 @@ void WifiConfigServer::handleCors() {
   if (!s_server) return;
   s_server->sendHeader("Access-Control-Allow-Origin", "*");
   s_server->sendHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  s_server->sendHeader("Access-Control-Allow-Headers", "Content-Type");
+  s_server->sendHeader("Access-Control-Allow-Headers",
+                       "Content-Type, X-API-Token, Authorization");
+}
+
+bool WifiConfigServer::isSoftApProvisioning() const {
+  const bool ap = WiFi.getMode() & WIFI_AP;
+  const bool staUp = (WiFi.getMode() & WIFI_STA) && (WiFi.status() == WL_CONNECTED);
+  return ap && !staUp;
+}
+
+bool WifiConfigServer::requireApiAuth() {
+  if (!controlAuthRequired()) return true;
+  if (!s_server) return false;
+
+  String token;
+  if (s_server->hasHeader("X-API-Token")) {
+    token = s_server->header("X-API-Token");
+  } else if (s_server->hasHeader("Authorization")) {
+    String auth = s_server->header("Authorization");
+    if (auth.startsWith("Bearer ") || auth.startsWith("bearer ")) {
+      token = auth.substring(7);
+      token.trim();
+    }
+  }
+  if (controlTokenMatches(token.c_str())) return true;
+  sendErr(401, "unauthorized");
+  return false;
 }
 
 void WifiConfigServer::handleOptions() {
@@ -193,6 +220,7 @@ document.getElementById('save').onclick=save;
 }
 
 void WifiConfigServer::handleGetWifi() {
+  if (!isSoftApProvisioning() && !requireApiAuth()) return;
   handleCors();
   WifiCreds c = WifiCredentials::get();
   const bool ap = WiFi.getMode() & WIFI_AP;
@@ -218,11 +246,16 @@ void WifiConfigServer::handleGetWifi() {
   json += ",";
   json += "\"control_port\":";
   json += String(WIFI_CONTROL_PORT);
+  json += ",";
+  json += "\"auth_required\":";
+  json += controlAuthRequired() ? "true" : "false";
   json += "}";
   s_server->send(200, "application/json", json);
 }
 
 void WifiConfigServer::handlePostWifi() {
+  // Soft-AP setup stays open so a phone can provision WiFi without a token.
+  if (!isSoftApProvisioning() && !requireApiAuth()) return;
   const String body = bodyOrEmpty();
   if (!body.length()) {
     sendErr(400, "body required");
@@ -246,12 +279,14 @@ void WifiConfigServer::handlePostWifi() {
 }
 
 void WifiConfigServer::handleClearWifi() {
+  if (!requireApiAuth()) return;
   WifiCredentials::clear();
   reconnectPending_ = true;
   sendOk("\"cleared\":true,\"reconnecting\":true");
 }
 
 void WifiConfigServer::handleGetStatus() {
+  if (!requireApiAuth()) return;
   handleCors();
   String json = "{";
   json += "\"ok\":true,";
@@ -277,12 +312,15 @@ void WifiConfigServer::handleGetStatus() {
   json += "\",";
   json += "\"mdns\":\"";
   json += String(MDNS_HOSTNAME) + ".local";
-  json += "\"";
+  json += "\",";
+  json += "\"auth_required\":";
+  json += controlAuthRequired() ? "true" : "false";
   json += "}";
   s_server->send(200, "application/json", json);
 }
 
 void WifiConfigServer::handleGetJiggle() {
+  if (!requireApiAuth()) return;
   handleCors();
   String json = "{";
   json += "\"ok\":true,";
@@ -296,6 +334,7 @@ void WifiConfigServer::handleGetJiggle() {
 }
 
 void WifiConfigServer::handlePostJiggle() {
+  if (!requireApiAuth()) return;
   const String body = bodyOrEmpty();
   bool enabled = false;
   bool have = jsonGetBool(body, "enabled", enabled);
@@ -321,6 +360,7 @@ void WifiConfigServer::handlePostJiggle() {
 }
 
 void WifiConfigServer::handlePostMove() {
+  if (!requireApiAuth()) return;
   const String body = bodyOrEmpty();
   int dx = 0, dy = 0, wheel = 0;
   if (!jsonGetInt(body, "dx", dx) || !jsonGetInt(body, "dy", dy)) {
@@ -335,6 +375,7 @@ void WifiConfigServer::handlePostMove() {
 }
 
 void WifiConfigServer::handlePostType() {
+  if (!requireApiAuth()) return;
   const String body = bodyOrEmpty();
   String text;
   if (!jsonGetString(body, "text", text) || text.length() == 0) {
@@ -348,6 +389,7 @@ void WifiConfigServer::handlePostType() {
 }
 
 void WifiConfigServer::handlePostKey() {
+  if (!requireApiAuth()) return;
   const String body = bodyOrEmpty();
   String key;
   if (!jsonGetString(body, "key", key)) jsonGetString(body, "name", key);
@@ -360,6 +402,7 @@ void WifiConfigServer::handlePostKey() {
 }
 
 void WifiConfigServer::handlePostClick() {
+  if (!requireApiAuth()) return;
   const String body = bodyOrEmpty();
   String button = "left";
   jsonGetString(body, "button", button);
@@ -371,6 +414,9 @@ void WifiConfigServer::handlePostClick() {
 void WifiConfigServer::begin() {
   if (running_) return;
   if (!s_server) s_server = new WebServer(WIFI_HTTP_PORT);
+
+  static const char *kCollectHeaders[] = {"X-API-Token", "Authorization"};
+  s_server->collectHeaders(kCollectHeaders, 2);
 
   s_server->on("/", HTTP_GET, [this]() { handleRoot(); });
 

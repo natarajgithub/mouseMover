@@ -8,6 +8,7 @@
 #include <NimBLEDevice.h>
 
 #include "Config.h"
+#include "ControlAuth.h"
 #include "CommandSink.h"
 #include "Logging.h"
 #include "WifiCredentials.h"
@@ -27,19 +28,34 @@ volatile bool s_bleConnected = false;
 // NOT restart advertising mid-teardown (which crashes deinit(true)).
 volatile bool s_bleTearingDown = false;
 
+bool s_bleAuthed = false;
+bool s_tcpAuthed = false;
+
+void dispatchControlLine(const std::string &line, const char *source,
+                         bool *authed) {
+  const ControlLineGate gate = controlGateLine(line.c_str(), authed);
+  if (gate == ControlLineGate::Reject) {
+    LOG_INFO("control auth rejected src=%s", source);
+    return;
+  }
+  if (gate == ControlLineGate::Consumed) {
+    LOG_INFO("control auth %s src=%s", *authed ? "ok" : "failed", source);
+    return;
+  }
+  handleCommandLine(line, source);
+}
+
 // Split incoming bytes into lines and dispatch each.
 void feedControlLines(std::string &buf, const std::string &incoming,
-                      const char *source) {
+                      const char *source, bool *authed) {
   buf += incoming;
   size_t nl;
   while ((nl = buf.find('\n')) != std::string::npos) {
     std::string line = buf.substr(0, nl);
     buf.erase(0, nl + 1);
     if (!line.empty() && line.back() == '\r') line.pop_back();
-    if (!line.empty()) handleCommandLine(line, source);
+    if (!line.empty()) dispatchControlLine(line, source, authed);
   }
-  // If a client sends a single command without a newline, dispatch on flush
-  // is handled by the caller; keep partial in buf.
 }
 
 std::string s_bleLineBuf;
@@ -53,9 +69,9 @@ class RxCallbacks : public NimBLECharacteristicCallbacks {
     if (v.find('\n') == std::string::npos) {
       std::string line = v;
       if (!line.empty() && line.back() == '\r') line.pop_back();
-      handleCommandLine(line, "ble");
+      dispatchControlLine(line, "ble", &s_bleAuthed);
     } else {
-      feedControlLines(s_bleLineBuf, v, "ble");
+      feedControlLines(s_bleLineBuf, v, "ble", &s_bleAuthed);
     }
   }
 };
@@ -63,10 +79,12 @@ class RxCallbacks : public NimBLECharacteristicCallbacks {
 class ServerCallbacks : public NimBLEServerCallbacks {
   void onConnect(NimBLEServer *, NimBLEConnInfo &) override {
     s_bleConnected = true;
+    s_bleAuthed = !controlAuthRequired();
     LOG_BLE("central connected");
   }
   void onDisconnect(NimBLEServer *, NimBLEConnInfo &, int reason) override {
     s_bleConnected = false;
+    s_bleAuthed = false;
     if (s_bleTearingDown) {
       LOG_BLE("central disconnected reason=%d during teardown", reason);
       return;
@@ -276,6 +294,7 @@ void RadioManager::loop() {
     if (nc) {
       s_tcpClient = nc;
       s_tcpLineBuf.clear();
+      s_tcpAuthed = !controlAuthRequired();
       LOG_WIFI("control client connected");
     }
   }
@@ -284,12 +303,16 @@ void RadioManager::loop() {
       char ch = (char)s_tcpClient.read();
       if (ch == '\r') continue;
       if (ch == '\n') {
-        if (!s_tcpLineBuf.empty()) handleCommandLine(s_tcpLineBuf, "wifi");
+        if (!s_tcpLineBuf.empty()) {
+          dispatchControlLine(s_tcpLineBuf, "wifi", &s_tcpAuthed);
+        }
         s_tcpLineBuf.clear();
       } else if (s_tcpLineBuf.size() < 256) {
         s_tcpLineBuf.push_back(ch);
       }
     }
+  } else {
+    s_tcpAuthed = false;
   }
 }
 

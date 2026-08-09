@@ -25,6 +25,10 @@
  *
  * CORS enabled for future mobile apps. After POST /api/wifi, call
  * takeReconnectRequest() from RadioManager::loop().
+ *
+ * When CONTROL_API_TOKEN is non-empty, /api/* requires header
+ * `X-API-Token: <token>` or `Authorization: Bearer <token>`, except Soft-AP
+ * WiFi provisioning (GET/POST /api/wifi while AP-only) which stays open.
  */
 
 class WifiConfigServer {
@@ -54,6 +58,8 @@ private:
   void handlePostClick();
   void sendOk(const String &extraJson = "");
   void sendErr(int code, const char *error);
+  bool requireApiAuth();
+  bool isSoftApProvisioning() const;
 
   bool running_ = false;
   bool reconnectPending_ = false;

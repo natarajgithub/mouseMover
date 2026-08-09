@@ -46,7 +46,8 @@ cp config.env.example config.env      # set ESP_PORT
 `wifi status|set|clear` · `status` · `version` · `help`
 
 WiFi credentials persist in NVS. With no STA creds, `radio wifi` starts Soft-AP
-`usb-hid-s3-setup` (open) with a setup page + REST at `http://192.168.4.1/api/wifi`.
+`usb-hid-s3-setup` (open by default; set `WIFI_AP_PASS` in `wifi_secrets.h` for
+WPA) with a setup page + REST at `http://192.168.4.1/api/wifi`.
 With creds, STA joins and exposes:
 
 - **HTTP REST** on `:80` — `GET /api/status`, `GET|POST /api/jiggle`,
@@ -55,6 +56,17 @@ With creds, STA joins and exposes:
 
 On STA the device also advertises **mDNS** as `hid-helper.local` (HTTP service
 on port 80), so apps can discover it without a hard-coded IP.
+
+Optional LAN hardening (compile-time, via `wifi_secrets.h`):
+
+```c
+#define WIFI_AP_PASS "setup-secret"       // Soft-AP WPA (8+ chars)
+#define CONTROL_API_TOKEN "change-me"     // HTTP / TCP / BLE
+```
+
+When `CONTROL_API_TOKEN` is set, send `X-API-Token: change-me` (or
+`Authorization: Bearer change-me`) on STA `/api/*`. Soft-AP WiFi provisioning
+stays open. TCP/BLE: send `auth change-me` once per session before commands.
 
 ### Status LED (onboard WS2812, GPIO21)
 
