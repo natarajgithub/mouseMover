@@ -3,6 +3,7 @@
 [![CI](https://github.com/natarajgithub/mouseMover/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/natarajgithub/mouseMover/actions/workflows/ci.yml)
 [![Firmware + unit tests](https://img.shields.io/github/actions/workflow/status/natarajgithub/mouseMover/ci.yml?branch=main&job=Native%20unit%20tests%20%2B%20firmware%20build&label=firmware%20%2B%20unit%20tests)](https://github.com/natarajgithub/mouseMover/actions/workflows/ci.yml)
 [![OpenAPI](https://img.shields.io/github/actions/workflow/status/natarajgithub/mouseMover/ci.yml?branch=main&job=OpenAPI%20lint&label=OpenAPI)](https://github.com/natarajgithub/mouseMover/actions/workflows/ci.yml)
+[![iOS](https://img.shields.io/github/actions/workflow/status/natarajgithub/mouseMover/ci.yml?branch=main&job=iOS%20build%20%2B%20unit%20tests&label=iOS)](https://github.com/natarajgithub/mouseMover/actions/workflows/ci.yml)
 
 **mouseMover** is an ESP32-S3 firmware that appears to your PC as a USB mouse +
 keyboard (**hid-helper**), with optional WiFi/BLE remote control.
@@ -49,6 +50,7 @@ The **[Mouse Mover](ios/)** SwiftUI app discovers devices on your LAN (Bonjour),
 |-------|----------------|
 | Native unit tests (`pio test -e native`) | Linux / macOS / CI |
 | Firmware compile (`pio run -e esp32s3`) | Linux / macOS / CI |
+| iOS companion (`xcodebuild test`) | **macOS** / CI (`macos-15`) |
 | On-device pytest (serial / HID E2E / WiFi / BLE / mDNS) | **macOS + board** only |
 
 ## Layout
@@ -66,6 +68,7 @@ Badges above track the latest `main` workflow run
 - PlatformIO **native unit tests**
 - **esp32s3 firmware compile**
 - OpenAPI YAML sanity check
+- **Mouse Mover iOS** build + unit tests (`macos-15` Simulator)
 
 ## Docs
 

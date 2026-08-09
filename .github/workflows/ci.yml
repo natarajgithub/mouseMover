@@ -1,4 +1,4 @@
-# Cloud-runnable checks for usb-hid-s3 (no Mac / no physical board).
+# Cloud-runnable checks for usb-hid-s3 + Mouse Mover iOS (no physical board).
 # On-device pytest (integration, HID E2E, WiFi, BLE, mDNS) stays local-only.
 name: CI
 
@@ -12,15 +12,14 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-defaults:
-  run:
-    working-directory: usb-hid-s3
-
 jobs:
   firmware:
     name: Native unit tests + firmware build
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: usb-hid-s3
 
     steps:
       - name: Checkout
@@ -72,6 +71,9 @@ jobs:
     name: OpenAPI lint
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: usb-hid-s3
 
     steps:
       - name: Checkout
@@ -83,7 +85,6 @@ jobs:
           python-version: "3.11"
 
       - name: Validate openapi.yaml parses as YAML + OpenAPI 3
-        # defaults.run.working-directory is usb-hid-s3
         run: |
           pip install pyyaml
           python - <<'PY'
@@ -110,3 +111,87 @@ jobs:
           assert not missing, f"missing paths: {missing}"
           print(f"OK: {path} openapi={doc['openapi']} paths={len(doc['paths'])}")
           PY
+
+  ios:
+    name: iOS build + unit tests
+    runs-on: macos-15
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check for iOS project
+        id: guard
+        run: |
+          if [ -f ios/MouseMover.xcodeproj/project.pbxproj ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "ios/ companion not in this commit; skipping iOS job steps."
+          fi
+
+      - name: Show Xcode version
+        if: steps.guard.outputs.present == 'true'
+        run: xcodebuild -version
+
+      - name: Resolve iOS Simulator destination
+        if: steps.guard.outputs.present == 'true'
+        id: sim
+        run: |
+          set -euo pipefail
+          name="$(python3 - <<'PY'
+          import json, subprocess, sys
+
+          data = json.loads(
+              subprocess.check_output(
+                  ["xcrun", "simctl", "list", "devices", "available", "-j"],
+                  text=True,
+              )
+          )
+          preferred = [
+              "iPhone 16",
+              "iPhone 17",
+              "iPhone 15",
+              "iPhone SE (3rd generation)",
+          ]
+          available = []
+          for runtime, devices in data.get("devices", {}).items():
+              if "iOS" not in runtime:
+                  continue
+              for device in devices:
+                  if device.get("isAvailable") and str(device.get("name", "")).startswith("iPhone"):
+                      available.append(device["name"])
+
+          # Prefer a known name, else first unique iPhone.
+          seen = []
+          for n in available:
+              if n not in seen:
+                  seen.append(n)
+          for name in preferred:
+              if name in seen:
+                  print(name)
+                  sys.exit(0)
+          if seen:
+              print(seen[0])
+              sys.exit(0)
+          sys.stderr.write("No available iPhone simulator\n")
+          sys.exit(1)
+          PY
+          )"
+          echo "destination=platform=iOS Simulator,name=${name}" >> "$GITHUB_OUTPUT"
+          echo "Using simulator: ${name}"
+
+      - name: Build and test Mouse Mover
+        if: steps.guard.outputs.present == 'true'
+        working-directory: ios
+        run: |
+          set -euo pipefail
+          xcodebuild test \
+            -project MouseMover.xcodeproj \
+            -scheme MouseMover \
+            -destination "${{ steps.sim.outputs.destination }}" \
+            -derivedDataPath "$RUNNER_TEMP/MouseMoverDerived" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO

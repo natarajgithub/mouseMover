@@ -47,6 +47,8 @@ xcodebuild -project MouseMover.xcodeproj -scheme MouseMover \
   -destination 'platform=iOS Simulator,name=iPhone 17' build
 ```
 
+CI runs the same `xcodebuild test` path on `macos-15` (skips gracefully if `ios/` is absent).
+
 See [`ios/README.md`](ios/README.md) for Simulator vs device notes (Hotspot Configuration entitlement for Soft-AP wizard).
 
 ## What not to commit
