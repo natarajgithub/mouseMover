@@ -40,19 +40,4 @@ final class HomeViewModel: ObservableObject {
             errorMessage = error.localizedDescription
         }
     }
-
-    #if DEBUG
-    func addSampleDevice(context: ModelContext) throws {
-        let sample = StoredDevice(
-            deviceId: "debug-sample-001",
-            displayName: "Sample HID Helper",
-            mdnsHost: "hid-helper-debug.local",
-            staIP: "192.168.2.161",
-            jiggleEnabled: false,
-            firmwareVersion: "0.4.0"
-        )
-        context.insert(sample)
-        try context.save()
-    }
-    #endif
 }
