@@ -7,8 +7,8 @@ Living checklist for the iOS companion app. Update this file at the end of each 
 | 0 — Firmware device identity | Pending | Multi-device fields in `/api/status` (see [PR #7](https://github.com/natarajgithub/mouseMover/pull/7)) |
 | 1 — App scaffold | Done | Xcode project, models, service stubs |
 | 2 — Device list & control | Done | SwiftData list, rename, jiggle toggles, add-by-address |
-| 3 — Bonjour discovery | In progress | Phase 3a: LAN scan wizard (this PR) |
-| 4 — Soft-AP provisioning | Not started | Join setup AP, POST `/api/wifi` |
+| 3 — Bonjour discovery | Done | Phase 3a: LAN scan; Phase 3b: Soft-AP wizard |
+| 4 — Soft-AP provisioning | Done | Wizard Path B: join AP, POST `/api/wifi`, rediscover |
 | 5 — Persistence & polish | Partial | SwiftData sync done; Keychain token storage pending |
 
 ## Phase 1 — App scaffold
@@ -42,21 +42,29 @@ Living checklist for the iOS companion app. Update this file at the end of each 
 - [x] `BonjourBrowser` — `NWBrowser` for `_http._tcp`, filter by TXT `id` or `hid-helper` name
 - [x] `BonjourDiscoveryFilter` — unit-tested candidate matching
 - [x] `AddDeviceWizardView` — choose path, scan list, probe `/api/status`, confirm & save
-- [x] Soft-AP path disabled with "Coming next" placeholder
+- [x] Soft-AP path placeholder (Phase 3b replaces)
 - [x] Home `+` and empty state wired to wizard sheet
 - [x] `DeviceRepository.addFromDiscovery` for wizard save
 - [x] Unit tests: filter logic, wizard view model state transitions (mock browser + API)
 
-### Phase 3b — (next)
+### Phase 3b — Soft-AP provisioning wizard
 
-- [ ] Soft-AP provisioning wizard path
-- [ ] Auto-add on discovery (optional polish)
+- [x] `SoftAPJoiner` — `NEHotspotConfiguration` join with open/passphrase APs; simulator-safe errors
+- [x] `SoftAPJoinerProtocol` + `MockSoftAPJoiner` for unit tests
+- [x] Wizard Path B — instructions, join SSID, probe `192.168.4.1/api/wifi`, home Wi‑Fi form, provision, reconnect prompt, LAN rediscover + manual address fallback
+- [x] `WifiStatus` decodes `device_id`, `ap_ssid`, `ap_ip` (firmware 0.4.0)
+- [x] Reuses Path A confirm/save; filters Bonjour by expected `device_id`
+- [x] Unit tests: Soft-AP wizard state machine (mock joiner + API + browser)
+
+### Phase 3c — (optional polish)
+
+- [ ] Auto-add on discovery
 
 ## Phase 4 — Soft-AP provisioning
 
-- [ ] Implement `SoftAPJoiner` (NEHotspotConfiguration or manual flow)
-- [ ] Provision WiFi credentials on `192.168.4.1`
-- [ ] Rejoin home WiFi and rediscover device
+- [x] Implement `SoftAPJoiner` (NEHotspotConfiguration + manual Settings fallback)
+- [x] Provision WiFi credentials on `192.168.4.1`
+- [x] Rejoin home WiFi and rediscover device
 
 ## Phase 5 — Persistence & polish
 

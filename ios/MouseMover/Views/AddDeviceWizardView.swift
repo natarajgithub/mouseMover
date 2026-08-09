@@ -16,8 +16,16 @@ struct AddDeviceWizardView: View {
                     scanningStep
                 case .confirm:
                     confirmStep
-                case .softAPPlaceholder:
-                    softAPPlaceholderStep
+                case .softAPInstructions:
+                    softAPInstructionsStep
+                case .softAPJoin:
+                    softAPJoinStep
+                case .softAPHomeWifi:
+                    softAPHomeWifiStep
+                case .softAPReconnect:
+                    softAPReconnectStep
+                case .softAPDiscover:
+                    softAPDiscoverStep
                 }
             }
             .navigationTitle(navigationTitle)
@@ -28,7 +36,7 @@ struct AddDeviceWizardView: View {
             } message: {
                 Text(viewModel.errorMessage ?? "")
             }
-            .interactiveDismissDisabled(viewModel.isProbing || viewModel.isSaving)
+            .interactiveDismissDisabled(viewModel.isProbing || viewModel.isSaving || viewModel.isJoining || viewModel.isProvisioning)
         }
     }
 
@@ -40,7 +48,7 @@ struct AddDeviceWizardView: View {
             "Scan Network"
         case .confirm:
             "Confirm Device"
-        case .softAPPlaceholder:
+        case .softAPInstructions, .softAPJoin, .softAPHomeWifi, .softAPReconnect, .softAPDiscover:
             "Set Up New Device"
         }
     }
@@ -52,7 +60,7 @@ struct AddDeviceWizardView: View {
                 viewModel.cancelWizard()
                 dismiss()
             }
-            .disabled(viewModel.isProbing || viewModel.isSaving)
+            .disabled(viewModel.isProbing || viewModel.isSaving || viewModel.isJoining || viewModel.isProvisioning)
         }
 
         if case .confirm = viewModel.step {
@@ -89,27 +97,16 @@ struct AddDeviceWizardView: View {
                 } label: {
                     Label {
                         VStack(alignment: .leading, spacing: 4) {
-                            HStack {
-                                Text("Set Up New Device (Soft‑AP)")
-                                    .foregroundStyle(.secondary)
-                                Text("Coming next")
-                                    .font(.caption2)
-                                    .fontWeight(.semibold)
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 2)
-                                    .background(.quaternary)
-                                    .clipShape(Capsule())
-                            }
+                            Text("Set Up New Device (Soft‑AP)")
+                                .foregroundStyle(.primary)
                             Text("Join the device setup network and provision Wi‑Fi.")
                                 .font(.footnote)
-                                .foregroundStyle(.tertiary)
+                                .foregroundStyle(.secondary)
                         }
                     } icon: {
                         Image(systemName: "wifi.router")
-                            .foregroundStyle(.secondary)
                     }
                 }
-                .disabled(true)
             } footer: {
                 Text("Scanning uses Bonjour to find `_http._tcp` services advertising HID helpers on your LAN.")
             }
@@ -117,15 +114,219 @@ struct AddDeviceWizardView: View {
     }
 
     private var scanningStep: some View {
+        discoveryList(
+            candidates: viewModel.candidates,
+            emptyTitle: "Scanning…",
+            emptyDescription: "Looking for HID helpers on your local network."
+        )
+    }
+
+    private var softAPInstructionsStep: some View {
+        List {
+            Section {
+                Label("Power on the HID helper.", systemImage: "power")
+                Label("Wait for the magenta setup LED.", systemImage: "light.max")
+                Label("The device broadcasts a setup Wi‑Fi network named like `usb-hid-s3-XXXX`.", systemImage: "wifi")
+            } header: {
+                Text("Before You Start")
+            }
+
+            Section {
+                Button("Continue") {
+                    viewModel.continueFromSoftAPInstructions()
+                }
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .bottomBar) {
+                Button("Back") {
+                    viewModel.backToChoosePath()
+                }
+            }
+        }
+    }
+
+    private var softAPJoinStep: some View {
+        Form {
+            Section {
+                TextField("Setup network (SSID)", text: $viewModel.softAPSSID)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                SecureField("Password (optional for open networks)", text: $viewModel.softAPPassword)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+            } footer: {
+                Text("Join the device Soft‑AP, then we'll connect to it at 192.168.4.1.")
+            }
+
+            Section {
+                Button {
+                    Task { await viewModel.joinSoftAP() }
+                } label: {
+                    if viewModel.isJoining {
+                        HStack {
+                            ProgressView()
+                            Text("Joining…")
+                        }
+                    } else {
+                        Text("Join Setup Network")
+                    }
+                }
+                .disabled(viewModel.isJoining || viewModel.isProbing)
+
+                Button("Continue") {
+                    Task { await viewModel.continueWithoutJoiningSoftAP() }
+                }
+                .disabled(viewModel.isJoining || viewModel.isProbing)
+            } footer: {
+                Text("Or connect in iOS Settings, then Continue.")
+            }
+        }
+        .overlay {
+            if viewModel.isProbing {
+                ProgressView("Connecting to device…")
+                    .padding()
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .bottomBar) {
+                Button("Back") {
+                    viewModel.backFromSoftAPJoin()
+                }
+                .disabled(viewModel.isJoining || viewModel.isProbing)
+            }
+        }
+    }
+
+    private var softAPHomeWifiStep: some View {
+        Form {
+            if let wifi = viewModel.probedWifiStatus {
+                Section("Device") {
+                    if let apSSID = wifi.apSsid {
+                        LabeledContent("Setup network", value: apSSID)
+                    }
+                    if let deviceId = wifi.deviceId {
+                        LabeledContent("Device ID", value: deviceId)
+                    }
+                    if let mode = wifi.mode {
+                        LabeledContent("Mode", value: mode)
+                    }
+                }
+            }
+
+            Section {
+                TextField("Home Wi‑Fi name (SSID)", text: $viewModel.homeWifiSSID)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                SecureField("Home Wi‑Fi password", text: $viewModel.homeWifiPassword)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+            } footer: {
+                Text("Credentials are sent to the device over the setup network only.")
+            }
+
+            Section {
+                Button {
+                    Task { await viewModel.provisionHomeWifi() }
+                } label: {
+                    if viewModel.isProvisioning {
+                        HStack {
+                            ProgressView()
+                            Text("Provisioning…")
+                        }
+                    } else {
+                        Text("Save & Connect Device")
+                    }
+                }
+                .disabled(viewModel.isProvisioning)
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .bottomBar) {
+                Button("Back") {
+                    viewModel.backFromSoftAPHomeWifi()
+                }
+                .disabled(viewModel.isProvisioning)
+            }
+        }
+    }
+
+    private var softAPReconnectStep: some View {
+        List {
+            Section {
+                Label("Reconnect this iPhone to your home Wi‑Fi.", systemImage: "iphone.gen3")
+                Label("The HID helper will join the same network.", systemImage: "wifi")
+            } header: {
+                Text("Almost Done")
+            }
+
+            Section {
+                Button("Continue") {
+                    viewModel.continueAfterHomeWifiReconnect()
+                }
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .bottomBar) {
+                Button("Back") {
+                    viewModel.backFromSoftAPReconnect()
+                }
+            }
+        }
+    }
+
+    private var softAPDiscoverStep: some View {
+        VStack(spacing: 0) {
+            discoveryList(
+                candidates: viewModel.filteredCandidates,
+                emptyTitle: "Looking for device…",
+                emptyDescription: "Searching your home network for the provisioned HID helper."
+            )
+
+            Form {
+                Section {
+                    TextField("Host or IP", text: $viewModel.softAPManualHost, prompt: Text("hid-helper.local"))
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .keyboardType(.URL)
+                    Button("Probe Address") {
+                        Task { await viewModel.probeManualAddress() }
+                    }
+                    .disabled(viewModel.isProbing || viewModel.softAPManualHost.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                } header: {
+                    Text("Enter Address")
+                } footer: {
+                    Text("Use this if Bonjour discovery does not list your device yet.")
+                }
+            }
+            .frame(maxHeight: 180)
+        }
+        .toolbar {
+            ToolbarItem(placement: .bottomBar) {
+                Button("Back") {
+                    viewModel.backFromSoftAPDiscover()
+                }
+                .disabled(viewModel.isProbing)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func discoveryList(
+        candidates: [DiscoveredService],
+        emptyTitle: String,
+        emptyDescription: String
+    ) -> some View {
         Group {
-            if viewModel.candidates.isEmpty {
+            if candidates.isEmpty {
                 ContentUnavailableView {
-                    Label("Scanning…", systemImage: "antenna.radiowaves.left.and.right")
+                    Label(emptyTitle, systemImage: "antenna.radiowaves.left.and.right")
                 } description: {
-                    Text("Looking for HID helpers on your local network.")
+                    Text(emptyDescription)
                 }
             } else {
-                List(viewModel.candidates) { candidate in
+                List(candidates) { candidate in
                     Button {
                         Task { await viewModel.selectCandidate(candidate) }
                     } label: {
@@ -186,21 +387,6 @@ struct AddDeviceWizardView: View {
                     } footer: {
                         Text("This device requires an API token for control.")
                     }
-                }
-            }
-        }
-    }
-
-    private var softAPPlaceholderStep: some View {
-        ContentUnavailableView(
-            "Soft‑AP Setup",
-            systemImage: "wifi.router",
-            description: Text("Guided Wi‑Fi provisioning for new devices is coming in the next release.")
-        )
-        .toolbar {
-            ToolbarItem(placement: .bottomBar) {
-                Button("Back") {
-                    viewModel.backToChoosePath()
                 }
             }
         }

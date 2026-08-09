@@ -29,4 +29,26 @@ final class DeviceAPIClientTests: XCTestCase {
         XCTAssertEqual(status.mdns, "hid-helper-a1b2.local")
         XCTAssertFalse(status.authRequired)
     }
+
+    func testDecodeWifiStatusStubJSON() throws {
+        let json = """
+        {
+          "mode": "ap",
+          "configured": false,
+          "ssid": "",
+          "ap_ssid": "usb-hid-s3-abcd",
+          "ap_ip": "192.168.4.1",
+          "sta_ip": "",
+          "device_id": "a1b2c3d4"
+        }
+        """.data(using: .utf8)!
+
+        let wifi = try JSONDecoder().decode(WifiStatus.self, from: json)
+
+        XCTAssertEqual(wifi.mode, "ap")
+        XCTAssertEqual(wifi.configured, false)
+        XCTAssertEqual(wifi.apSsid, "usb-hid-s3-abcd")
+        XCTAssertEqual(wifi.apIp, "192.168.4.1")
+        XCTAssertEqual(wifi.deviceId, "a1b2c3d4")
+    }
 }

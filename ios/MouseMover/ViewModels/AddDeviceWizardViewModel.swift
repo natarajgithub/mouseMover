@@ -5,7 +5,11 @@ enum AddDeviceWizardStep: Equatable {
     case choosePath
     case scanning
     case confirm(ProbedDevice)
-    case softAPPlaceholder
+    case softAPInstructions
+    case softAPJoin
+    case softAPHomeWifi
+    case softAPReconnect
+    case softAPDiscover
 }
 
 struct ProbedDevice: Equatable {
@@ -16,23 +20,39 @@ struct ProbedDevice: Equatable {
 
 @MainActor
 final class AddDeviceWizardViewModel: ObservableObject {
+    static let softAPBaseURL = URL(string: "http://192.168.4.1/")!
+    static let softAPSSIDPrefix = "usb-hid-s3-"
+
     @Published private(set) var step: AddDeviceWizardStep = .choosePath
     @Published private(set) var candidates: [DiscoveredService] = []
     @Published private(set) var isProbing = false
     @Published private(set) var isSaving = false
+    @Published private(set) var isJoining = false
+    @Published private(set) var isProvisioning = false
     @Published var errorMessage: String?
     @Published var displayName = ""
     @Published var apiToken = ""
 
+    @Published var softAPSSID = softAPSSIDPrefix
+    @Published var softAPPassword = ""
+    @Published var homeWifiSSID = ""
+    @Published var homeWifiPassword = ""
+    @Published var softAPManualHost = ""
+    @Published private(set) var expectedDeviceId: String?
+    @Published private(set) var probedWifiStatus: WifiStatus?
+
     private let browser: any BonjourBrowserProtocol
     private let apiClient: any DeviceAPIClientProtocol
+    private let softAPJoiner: any SoftAPJoinerProtocol
 
     init(
         browser: any BonjourBrowserProtocol = BonjourBrowser(),
-        apiClient: any DeviceAPIClientProtocol = DeviceAPIClient()
+        apiClient: any DeviceAPIClientProtocol = DeviceAPIClient(),
+        softAPJoiner: any SoftAPJoinerProtocol = SoftAPJoiner()
     ) {
         self.browser = browser
         self.apiClient = apiClient
+        self.softAPJoiner = softAPJoiner
     }
 
     var probedDevice: ProbedDevice? {
@@ -46,20 +66,123 @@ final class AddDeviceWizardViewModel: ObservableObject {
         probedDevice?.status.authRequired == true
     }
 
+    var filteredCandidates: [DiscoveredService] {
+        guard let expectedDeviceId else { return candidates }
+        let matches = candidates.filter { $0.deviceId == expectedDeviceId }
+        return matches.isEmpty ? candidates : matches
+    }
+
     func chooseScan() {
+        resetSoftAPState()
         errorMessage = nil
         step = .scanning
-        browser.onUpdate = { [weak self] services in
-            Task { @MainActor in
-                self?.candidates = services
-            }
-        }
-        browser.startBrowsing()
+        startBrowsing()
     }
 
     func chooseSoftAP() {
         browser.stopBrowsing()
-        step = .softAPPlaceholder
+        resetSoftAPState()
+        errorMessage = nil
+        step = .softAPInstructions
+    }
+
+    func continueFromSoftAPInstructions() {
+        errorMessage = nil
+        step = .softAPJoin
+    }
+
+    func joinSoftAP() async {
+        isJoining = true
+        errorMessage = nil
+        defer { isJoining = false }
+
+        let trimmedSSID = softAPSSID.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedSSID.isEmpty else {
+            errorMessage = SoftAPJoinError.invalidSSID.localizedDescription
+            return
+        }
+
+        let password = softAPPassword.trimmingCharacters(in: .whitespacesAndNewlines)
+        do {
+            try await softAPJoiner.join(
+                ssid: trimmedSSID,
+                password: password.isEmpty ? nil : password
+            )
+            await probeDeviceOnSoftAP()
+        } catch let error as SoftAPJoinError where error == .notSupported {
+            errorMessage = error.localizedDescription
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func continueWithoutJoiningSoftAP() async {
+        await probeDeviceOnSoftAP()
+    }
+
+    func probeDeviceOnSoftAP() async {
+        isProbing = true
+        errorMessage = nil
+        defer { isProbing = false }
+
+        do {
+            let wifi = try await apiClient.getWifi(baseURL: Self.softAPBaseURL, token: nil)
+            probedWifiStatus = wifi
+            expectedDeviceId = wifi.deviceId
+            if let apSSID = wifi.apSsid, !apSSID.isEmpty, softAPSSID == Self.softAPSSIDPrefix {
+                softAPSSID = apSSID
+            }
+            step = .softAPHomeWifi
+        } catch {
+            errorMessage = "Could not reach the device at 192.168.4.1. Join the setup Wi‑Fi network and try again."
+        }
+    }
+
+    func provisionHomeWifi() async {
+        let trimmedSSID = homeWifiSSID.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedSSID.isEmpty else {
+            errorMessage = "Home Wi‑Fi network name is required."
+            return
+        }
+
+        isProvisioning = true
+        errorMessage = nil
+        defer { isProvisioning = false }
+
+        do {
+            try await apiClient.provisionWifi(
+                baseURL: Self.softAPBaseURL,
+                ssid: trimmedSSID,
+                password: homeWifiPassword,
+                token: nil
+            )
+            step = .softAPReconnect
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func continueAfterHomeWifiReconnect() {
+        errorMessage = nil
+        step = .softAPDiscover
+        startBrowsing()
+    }
+
+    func probeManualAddress() async {
+        let trimmedHost = softAPManualHost.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedHost.isEmpty else {
+            errorMessage = "Enter a host or IP address."
+            return
+        }
+
+        let candidate = DiscoveredService(
+            id: "manual-\(trimmedHost)",
+            deviceId: expectedDeviceId,
+            name: trimmedHost,
+            host: trimmedHost,
+            port: 80
+        )
+        await selectCandidate(candidate)
     }
 
     func backToChoosePath() {
@@ -67,11 +190,40 @@ final class AddDeviceWizardViewModel: ObservableObject {
         step = .choosePath
         candidates = []
         errorMessage = nil
+        resetSoftAPState()
     }
 
     func backFromConfirm() {
         errorMessage = nil
-        step = .scanning
+        if expectedDeviceId != nil {
+            step = .softAPDiscover
+            startBrowsing()
+        } else {
+            step = .scanning
+            startBrowsing()
+        }
+    }
+
+    func backFromSoftAPJoin() {
+        errorMessage = nil
+        step = .softAPInstructions
+    }
+
+    func backFromSoftAPHomeWifi() {
+        errorMessage = nil
+        step = .softAPJoin
+    }
+
+    func backFromSoftAPReconnect() {
+        errorMessage = nil
+        step = .softAPHomeWifi
+    }
+
+    func backFromSoftAPDiscover() {
+        browser.stopBrowsing()
+        errorMessage = nil
+        step = .softAPReconnect
+        candidates = []
     }
 
     func cancelWizard() {
@@ -81,6 +233,7 @@ final class AddDeviceWizardViewModel: ObservableObject {
         errorMessage = nil
         displayName = ""
         apiToken = ""
+        resetSoftAPState()
     }
 
     func selectCandidate(_ candidate: DiscoveredService) async {
@@ -95,6 +248,10 @@ final class AddDeviceWizardViewModel: ObservableObject {
 
         do {
             let status = try await apiClient.status(baseURL: baseURL, token: nil)
+            if let expectedDeviceId, let deviceId = status.deviceId, deviceId != expectedDeviceId {
+                errorMessage = "This device does not match the one you provisioned."
+                return
+            }
             displayName = Self.defaultDisplayName(for: status)
             apiToken = ""
             step = .confirm(ProbedDevice(candidate: candidate, status: status, baseURL: baseURL))
@@ -151,5 +308,24 @@ final class AddDeviceWizardViewModel: ObservableObject {
             return status.name
         }
         return "HID Helper"
+    }
+
+    private func startBrowsing() {
+        browser.onUpdate = { [weak self] services in
+            Task { @MainActor in
+                self?.candidates = services
+            }
+        }
+        browser.startBrowsing()
+    }
+
+    private func resetSoftAPState() {
+        softAPSSID = Self.softAPSSIDPrefix
+        softAPPassword = ""
+        homeWifiSSID = ""
+        homeWifiPassword = ""
+        softAPManualHost = ""
+        expectedDeviceId = nil
+        probedWifiStatus = nil
     }
 }

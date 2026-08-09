@@ -28,6 +28,7 @@
 		A10000000000000000000019 /* BonjourDiscoveryFilterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000022 /* BonjourDiscoveryFilterTests.swift */; };
 		A10000000000000000000020 /* AddDeviceWizardViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000023 /* AddDeviceWizardViewModelTests.swift */; };
 		A10000000000000000000021 /* MockBonjourBrowser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000024 /* MockBonjourBrowser.swift */; };
+		A10000000000000000000022 /* MockSoftAPJoiner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000025 /* MockSoftAPJoiner.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -65,6 +66,7 @@
 		A20000000000000000000022 /* BonjourDiscoveryFilterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BonjourDiscoveryFilterTests.swift; sourceTree = "<group>"; };
 		A20000000000000000000023 /* AddDeviceWizardViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddDeviceWizardViewModelTests.swift; sourceTree = "<group>"; };
 		A20000000000000000000024 /* MockBonjourBrowser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockBonjourBrowser.swift; sourceTree = "<group>"; };
+		A20000000000000000000025 /* MockSoftAPJoiner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockSoftAPJoiner.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -119,6 +121,7 @@
 				A20000000000000000000022 /* BonjourDiscoveryFilterTests.swift */,
 				A20000000000000000000023 /* AddDeviceWizardViewModelTests.swift */,
 				A20000000000000000000024 /* MockBonjourBrowser.swift */,
+				A20000000000000000000025 /* MockSoftAPJoiner.swift */,
 			);
 			path = MouseMoverTests;
 			sourceTree = "<group>";
@@ -305,6 +308,7 @@
 				A10000000000000000000019 /* BonjourDiscoveryFilterTests.swift in Sources */,
 				A10000000000000000000020 /* AddDeviceWizardViewModelTests.swift in Sources */,
 				A10000000000000000000021 /* MockBonjourBrowser.swift in Sources */,
+				A10000000000000000000022 /* MockSoftAPJoiner.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

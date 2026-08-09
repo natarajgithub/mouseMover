@@ -81,11 +81,14 @@ struct WifiProvisionRequest: Encodable, Sendable {
 }
 
 struct WifiStatus: Codable, Equatable, Sendable {
-    let ok: Bool
+    let ok: Bool?
     let mode: String?
     let configured: Bool?
     let ssid: String?
     let staIp: String?
+    let deviceId: String?
+    let apSsid: String?
+    let apIp: String?
 
     enum CodingKeys: String, CodingKey {
         case ok
@@ -93,5 +96,8 @@ struct WifiStatus: Codable, Equatable, Sendable {
         case configured
         case ssid
         case staIp = "sta_ip"
+        case deviceId = "device_id"
+        case apSsid = "ap_ssid"
+        case apIp = "ap_ip"
     }
 }
