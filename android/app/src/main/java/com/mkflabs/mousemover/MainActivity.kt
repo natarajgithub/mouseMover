@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.mkflabs.mousemover.ui.HomeScreen
+import com.mkflabs.mousemover.ui.MouseMoverNav
 import com.mkflabs.mousemover.ui.theme.MouseMoverTheme
 
 class MainActivity : ComponentActivity() {
@@ -13,7 +13,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             MouseMoverTheme {
-                HomeScreen()
+                MouseMoverNav()
             }
         }
     }
