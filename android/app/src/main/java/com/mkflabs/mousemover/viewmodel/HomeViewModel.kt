@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.mkflabs.mousemover.data.DeviceRepository
 import com.mkflabs.mousemover.data.StoredDeviceEntity
 import com.mkflabs.mousemover.network.DevicePresenceStatus
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -33,9 +34,7 @@ class HomeViewModel(
     private val _refreshing = MutableStateFlow(false)
     val refreshing: StateFlow<Boolean> = _refreshing.asStateFlow()
 
-    init {
-        refresh()
-    }
+    private var refreshJob: Job? = null
 
     fun presenceFor(device: StoredDeviceEntity): DevicePresenceStatus =
         DevicePresenceStatus.resolve(
@@ -44,19 +43,27 @@ class HomeViewModel(
             staIp = device.staIp,
         )
 
-    fun refresh() {
-        viewModelScope.launch {
-            _refreshing.value = true
-            _error.value = null
-            try {
-                val current = repository.getAll()
-                _offlineIds.value = repository.refreshAll(current)
-            } catch (e: Exception) {
-                _error.value = e.message
-            } finally {
-                _refreshing.value = false
+    /** Pull-to-refresh: shows the list indicator. */
+    fun refresh() = refreshInternal(showIndicator = true)
+
+    /** Auto/resume poll: updates presence without flashing the refresh spinner. */
+    fun refreshQuietly() = refreshInternal(showIndicator = false)
+
+    private fun refreshInternal(showIndicator: Boolean) {
+        if (refreshJob?.isActive == true) return
+        refreshJob =
+            viewModelScope.launch {
+                if (showIndicator) _refreshing.value = true
+                _error.value = null
+                try {
+                    val current = repository.getAll()
+                    _offlineIds.value = repository.refreshAll(current)
+                } catch (e: Exception) {
+                    _error.value = e.message
+                } finally {
+                    if (showIndicator) _refreshing.value = false
+                }
             }
-        }
     }
 
     fun setJiggle(device: StoredDeviceEntity, enabled: Boolean) {
@@ -65,6 +72,7 @@ class HomeViewModel(
                 repository.setJiggle(device, enabled)
                 _offlineIds.value = _offlineIds.value - device.deviceId
             } catch (e: Exception) {
+                _offlineIds.value = _offlineIds.value + device.deviceId
                 _error.value = e.message
             }
         }
@@ -75,6 +83,8 @@ class HomeViewModel(
     }
 
     companion object {
+        const val PRESENCE_POLL_MS = 15_000L
+
         fun factory(repository: DeviceRepository): ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")

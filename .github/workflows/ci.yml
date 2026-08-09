@@ -195,3 +195,51 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO
+
+  android:
+    name: Android build + unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check for Android project
+        id: guard
+        run: |
+          if [ -f android/settings.gradle.kts ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "android/ companion not in this commit; skipping Android job steps."
+          fi
+
+      - name: Set up JDK 17
+        if: steps.guard.outputs.present == 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        if: steps.guard.outputs.present == 'true'
+        uses: android-actions/setup-android@v3
+
+      - name: Cache Gradle
+        if: steps.guard.outputs.present == 'true'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle.kts', 'android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - name: Unit tests + assembleDebug
+        if: steps.guard.outputs.present == 'true'
+        working-directory: android
+        run: |
+          set -euo pipefail
+          ./gradlew :app:testDebugUnitTest :app:assembleDebug --no-daemon

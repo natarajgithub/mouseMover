@@ -4,6 +4,7 @@
 [![Firmware + unit tests](https://img.shields.io/github/actions/workflow/status/natarajgithub/mouseMover/ci.yml?branch=main&job=Native%20unit%20tests%20%2B%20firmware%20build&label=firmware%20%2B%20unit%20tests)](https://github.com/natarajgithub/mouseMover/actions/workflows/ci.yml)
 [![OpenAPI](https://img.shields.io/github/actions/workflow/status/natarajgithub/mouseMover/ci.yml?branch=main&job=OpenAPI%20lint&label=OpenAPI)](https://github.com/natarajgithub/mouseMover/actions/workflows/ci.yml)
 [![iOS](https://img.shields.io/github/actions/workflow/status/natarajgithub/mouseMover/ci.yml?branch=main&job=iOS%20build%20%2B%20unit%20tests&label=iOS)](https://github.com/natarajgithub/mouseMover/actions/workflows/ci.yml)
+[![Android](https://img.shields.io/github/actions/workflow/status/natarajgithub/mouseMover/ci.yml?branch=main&job=Android%20build%20%2B%20unit%20tests&label=Android)](https://github.com/natarajgithub/mouseMover/actions/workflows/ci.yml)
 
 **mouseMover** is an ESP32-S3 firmware that appears to your PC as a USB mouse +
 keyboard (**hid-helper**), with optional WiFi/BLE remote control.
@@ -40,9 +41,10 @@ Full commands, LED legend, and REST examples:
 [`usb-hid-s3/README.md`](usb-hid-s3/README.md)  
 OpenAPI: [`usb-hid-s3/docs/openapi.yaml`](usb-hid-s3/docs/openapi.yaml)
 
-### 3. iOS companion (optional)
+### 3. Companions (optional)
 
-The **[Mouse Mover](ios/)** SwiftUI app discovers devices on your LAN (Bonjour), provisions new boards over Soft-AP, and toggles jiggle / rename from your phone. Requires firmware **0.4.0+** for the full wizard; see [`ios/README.md`](ios/README.md) for build steps and security notes.
+- **[iOS Mouse Mover](ios/)** — SwiftUI; Bonjour, Soft-AP, jiggle / rename. Firmware **0.4.0+**. See [`ios/README.md`](ios/README.md).
+- **[Android Mouse Mover](android/)** — Kotlin + Jetpack Compose; NSD, Soft-AP, same REST. Firmware **0.4.0+**. See [`android/README.md`](android/README.md).
 
 ### 4. Platform support
 
@@ -51,6 +53,7 @@ The **[Mouse Mover](ios/)** SwiftUI app discovers devices on your LAN (Bonjour),
 | Native unit tests (`pio test -e native`) | Linux / macOS / CI |
 | Firmware compile (`pio run -e esp32s3`) | Linux / macOS / CI |
 | iOS companion (`xcodebuild test`) | **macOS** / CI (`macos-15`) |
+| Android companion (`./gradlew test`) | Linux / macOS / CI (`ubuntu-latest`) |
 | On-device pytest (serial / HID E2E / WiFi / BLE / mDNS) | **macOS + board** only |
 
 ## Layout
@@ -58,7 +61,8 @@ The **[Mouse Mover](ios/)** SwiftUI app discovers devices on your LAN (Bonjour),
 | Folder | Purpose |
 |--------|---------|
 | [`usb-hid-s3/`](usb-hid-s3/) | ESP32-S3 firmware (USB HID + WiFi REST + Soft-AP + mDNS) |
-| [`ios/`](ios/) | **Mouse Mover** iOS companion app (SwiftUI, Bonjour discovery, REST control) |
+| [`ios/`](ios/) | **Mouse Mover** iOS companion (SwiftUI) |
+| [`android/`](android/) | **Mouse Mover** Android companion (Kotlin + Compose) |
 
 ## CI
 
@@ -69,6 +73,7 @@ Badges above track the latest `main` workflow run
 - **esp32s3 firmware compile**
 - OpenAPI YAML sanity check
 - **Mouse Mover iOS** build + unit tests (`macos-15` Simulator)
+- **Mouse Mover Android** unit tests + `assembleDebug` (`ubuntu-latest`)
 
 ## Docs
 

@@ -31,31 +31,22 @@ fun MouseMoverNav() {
             HomeScreen(
                 viewModel = homeVm,
                 onOpenDevice = { device ->
-                    val offline = homeVm.offlineIds.value.contains(device.deviceId)
-                    nav.navigate("detail/${device.deviceId}?offline=$offline")
+                    nav.navigate("detail/${device.deviceId}")
                 },
                 onAddDevice = { nav.navigate("wizard") },
                 onAddByAddress = { nav.navigate("addByAddress") },
             )
         }
         composable(
-            route = "detail/{deviceId}?offline={offline}",
-            arguments =
-                listOf(
-                    navArgument("deviceId") { type = NavType.StringType },
-                    navArgument("offline") {
-                        type = NavType.BoolType
-                        defaultValue = false
-                    },
-                ),
+            route = "detail/{deviceId}",
+            arguments = listOf(navArgument("deviceId") { type = NavType.StringType }),
         ) { entry ->
             val deviceId = entry.arguments?.getString("deviceId").orEmpty()
-            val offline = entry.arguments?.getBoolean("offline") ?: false
             val vm: DeviceDetailViewModel =
                 viewModel(
                     factory =
-                        remember(deviceId, offline) {
-                            DeviceDetailViewModel.factory(app.repository, deviceId, offline)
+                        remember(deviceId) {
+                            DeviceDetailViewModel.factory(app.repository, deviceId)
                         },
                 )
             DeviceDetailScreen(viewModel = vm, onBack = { nav.popBackStack() })

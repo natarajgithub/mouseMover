@@ -45,9 +45,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.background
+import androidx.compose.runtime.LaunchedEffect
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import com.mkflabs.mousemover.data.StoredDeviceEntity
 import com.mkflabs.mousemover.network.DevicePresenceStatus
 import com.mkflabs.mousemover.viewmodel.HomeViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,6 +68,17 @@ fun HomeScreen(
     val refreshing by viewModel.refreshing.collectAsState()
     val error by viewModel.error.collectAsState()
     var menuOpen by remember { mutableStateOf(false) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            viewModel.refreshQuietly()
+            while (isActive) {
+                delay(HomeViewModel.PRESENCE_POLL_MS)
+                viewModel.refreshQuietly()
+            }
+        }
+    }
 
     if (error != null) {
         AlertDialog(
