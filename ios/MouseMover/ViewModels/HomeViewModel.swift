@@ -1,38 +1,64 @@
 import Foundation
+import SwiftData
 
 @MainActor
 final class HomeViewModel: ObservableObject {
-    @Published private(set) var devices: [Device] = []
-    @Published private(set) var isLoading = false
+    @Published private(set) var isRefreshing = false
+    @Published private(set) var offlineDeviceIds: Set<String> = []
     @Published var errorMessage: String?
 
     private let apiClient: any DeviceAPIClientProtocol
-    private let bonjourBrowser: any BonjourBrowserProtocol
 
-    init(
-        apiClient: any DeviceAPIClientProtocol = DeviceAPIClient(),
-        bonjourBrowser: any BonjourBrowserProtocol = BonjourBrowser()
-    ) {
+    init(apiClient: any DeviceAPIClientProtocol = DeviceAPIClient()) {
         self.apiClient = apiClient
-        self.bonjourBrowser = bonjourBrowser
     }
 
-    func refresh(from baseURL: URL, token: String? = nil) async {
-        isLoading = true
-        errorMessage = nil
-        defer { isLoading = false }
+    func refreshAll(devices: [StoredDevice], context: ModelContext) async {
+        guard !devices.isEmpty else {
+            offlineDeviceIds = []
+            return
+        }
 
+        isRefreshing = true
+        errorMessage = nil
+        defer { isRefreshing = false }
+
+        let repository = DeviceRepository(context: context)
+        offlineDeviceIds = await repository.refreshAll(devices: devices, api: apiClient)
+    }
+
+    func setJiggle(device: StoredDevice, enabled: Bool, context: ModelContext) async {
+        let previous = device.jiggleEnabled
+        device.jiggleEnabled = enabled
+
+        let repository = DeviceRepository(context: context)
         do {
-            let status = try await apiClient.status(baseURL: baseURL, token: token)
-            let host = baseURL.host ?? baseURL.absoluteString
-            let device = Device(status: status, fallbackHost: host)
-            if let index = devices.firstIndex(where: { $0.id == device.id }) {
-                devices[index] = device
-            } else {
-                devices.append(device)
-            }
+            try await repository.setJiggle(device, enabled: enabled, api: apiClient)
+            offlineDeviceIds.remove(device.deviceId)
         } catch {
+            device.jiggleEnabled = previous
             errorMessage = error.localizedDescription
         }
     }
+
+    func addByAddress(host: String, token: String?, context: ModelContext) async throws {
+        let repository = DeviceRepository(context: context)
+        _ = try await repository.addByAddress(host: host, token: token, api: apiClient)
+        errorMessage = nil
+    }
+
+    #if DEBUG
+    func addSampleDevice(context: ModelContext) throws {
+        let sample = StoredDevice(
+            deviceId: "debug-sample-001",
+            displayName: "Sample HID Helper",
+            mdnsHost: "hid-helper-debug.local",
+            staIP: "192.168.2.161",
+            jiggleEnabled: false,
+            firmwareVersion: "0.4.0"
+        )
+        context.insert(sample)
+        try context.save()
+    }
+    #endif
 }

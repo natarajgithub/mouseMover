@@ -5,11 +5,11 @@ Living checklist for the iOS companion app. Update this file at the end of each 
 | Phase | Status | Notes |
 |-------|--------|-------|
 | 0 — Firmware device identity | Pending | Multi-device fields in `/api/status` (see [PR #7](https://github.com/natarajgithub/mouseMover/pull/7)) |
-| 1 — App scaffold | In progress | Xcode project, models, service stubs |
-| 2 — Bonjour discovery | Not started | NWBrowser, device list UI |
-| 3 — Device control | Not started | Status, jiggle toggle, auth token |
+| 1 — App scaffold | Done | Xcode project, models, service stubs |
+| 2 — Device list & control | Done | SwiftData list, rename, jiggle toggles, add-by-address |
+| 3 — Bonjour discovery | Not started | NWBrowser, auto-probe `/api/status` |
 | 4 — Soft-AP provisioning | Not started | Join setup AP, POST `/api/wifi` |
-| 5 — Persistence & polish | Not started | SwiftData sync, settings, error UX |
+| 5 — Persistence & polish | Partial | SwiftData sync done; Keychain token storage pending |
 
 ## Phase 1 — App scaffold
 
@@ -24,19 +24,22 @@ Living checklist for the iOS companion app. Update this file at the end of each 
 - [x] Unit test: decode stub `/api/status` JSON
 - [x] `ios/README.md`
 
-## Phase 2 — Bonjour discovery (next)
+## Phase 2 — Device list & control
+
+- [x] `DeviceRepository` — load/save, concurrent `refreshAll`, jiggle/rename/delete/token
+- [x] `DeviceEndpointResolver` — mDNS-first URL resolution with STA IP fallback
+- [x] Home device list (`ContentView`) with jiggle toggles and offline badge
+- [x] Pull-to-refresh status for all saved devices
+- [x] `DeviceDetailView` — rename, device info, auth token, jiggle, delete
+- [x] Add-by-address sheet for manual testing (wizard placeholder in toolbar)
+- [x] DEBUG sample device button on empty state
+- [x] Unit tests: `DeviceRepository.setJiggle`, endpoint URL resolution
+
+## Phase 3 — Bonjour discovery (next)
 
 - [ ] Implement `BonjourBrowser` with `NWBrowser` for `_http._tcp.`
 - [ ] Resolve host/port and probe `/api/status`
-- [ ] Replace home empty state with discovered device list
-- [ ] Handle duplicate entries by `device_id`
-
-## Phase 3 — Device control
-
-- [ ] Device detail screen (name, IP, firmware, jiggle state)
-- [ ] Jiggle on/off via `POST /api/jiggle`
-- [ ] Optional API token storage (Keychain)
-- [ ] Pull-to-refresh status
+- [ ] Auto-add discovered devices; dedupe by `device_id`
 
 ## Phase 4 — Soft-AP provisioning
 
@@ -46,7 +49,8 @@ Living checklist for the iOS companion app. Update this file at the end of each 
 
 ## Phase 5 — Persistence & polish
 
-- [ ] Persist known devices with SwiftData
-- [ ] Custom display names
+- [x] Persist known devices with SwiftData
+- [x] Custom display names
+- [ ] API token in Keychain
 - [ ] Onboarding / local network permission prompt copy
 - [ ] App icon and TestFlight build
