@@ -1,0 +1,65 @@
+name: Bug report
+description: Something does not work as documented
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Fill in as much as you can — board + USB VID is especially helpful.
+  - type: input
+    id: fw-version
+    attributes:
+      label: Firmware version
+      description: Output of `version` / `/api/status` (e.g. 0.3.3)
+    validations:
+      required: true
+  - type: dropdown
+    id: board
+    attributes:
+      label: Board
+      options:
+        - Waveshare ESP32-S3-Zero / Mini (ESP32-S3FH4R2)
+        - Other ESP32-S3 (describe below)
+    validations:
+      required: true
+  - type: input
+    id: usb-vid
+    attributes:
+      label: USB VID/PID seen by the host
+      description: "Expected app mode: 0xCAFE / 0x4001. Download/JTAG often shows 0x303A."
+      placeholder: "0xCAFE / 0x4001"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Flash with BOOT+RESET
+        2. Power-cycle
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: env
+    attributes:
+      label: Host / PlatformIO environment
+      placeholder: "macOS 15, PlatformIO Core x.y, pioarduino 54.03.21"
+  - type: textarea
+    id: extra
+    attributes:
+      label: Logs / extra context
+      description: Serial snippets, curl output, screenshots (redact WiFi passwords).
