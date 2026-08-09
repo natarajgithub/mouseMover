@@ -6,7 +6,8 @@
 //
 // WiFi path:
 //   - STA credentials in NVS (WifiCredentials). If none → Soft-AP setup portal
-//     (WIFI_AP_SSID) + HTTP REST on :80 for app/browser provisioning.
+//     (DeviceIdentity::softApSsid, e.g. usb-hid-s3-XXXX) + HTTP REST on :80 for
+//     app/browser provisioning. STA mode advertises mDNS via DeviceIdentity::mdnsFqdn.
 //   - If credentials exist → STA + TCP line control on WIFI_CONTROL_PORT.
 //
 // Only one radio is ever active at a time (single 2.4 GHz radio). USB HID is a

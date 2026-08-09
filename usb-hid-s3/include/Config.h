@@ -6,10 +6,10 @@
  * Values the test suite reads back (FW_VERSION) live here.
  */
 
-#define FW_VERSION      "0.3.4"
+#define FW_VERSION      "0.4.0"
 #define FW_NAME         "usb-hid-s3"
-// USB bcdDevice (0x0304 = v3.04) reported to the host.
-#define FW_VERSION_BCD  0x0304
+// USB bcdDevice (0x0400 = v4.00) reported to the host.
+#define FW_VERSION_BCD  0x0400
 
 // --- USB identity (custom VID/PID so the host drops the boot-time Espressif id) ---
 // Prefixed to avoid colliding with USB_VID/USB_PID/... from the S3 variant's
@@ -63,13 +63,12 @@
 #endif
 #define WIFI_CONNECT_TIMEOUT_MS 15000UL
 
-// Soft-AP setup portal (used when no STA credentials are available).
-#define WIFI_AP_SSID     "usb-hid-s3-setup"
+// Soft-AP / mDNS prefixes. Runtime SSIDs/hostnames append a MAC suffix via
+// DeviceIdentity (e.g. usb-hid-s3-EEFF, hid-helper-eeff.local).
+#define WIFI_AP_SSID_PREFIX  "usb-hid-s3-"
+#define MDNS_HOSTNAME_PREFIX "hid-helper-"
 #define WIFI_AP_CHANNEL  1
 #define WIFI_HTTP_PORT   80
-
-// mDNS hostname on STA (browse as hid-helper.local on the LAN).
-#define MDNS_HOSTNAME    "hid-helper"
 
 // Waveshare ESP32-S3-Zero / Mini: onboard WS2812 RGB on GPIO21.
 #define STATUS_LED_PIN         21

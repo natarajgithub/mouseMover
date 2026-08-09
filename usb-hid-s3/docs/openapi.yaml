@@ -5,8 +5,12 @@ info:
     REST control and WiFi provisioning for the ESP32-S3 USB HID helper.
 
     **Discovery**
-    - STA (home WiFi): `http://hid-helper.local` (mDNS) or `http://<sta-ip>`
-    - Soft-AP setup: join WiFi `usb-hid-s3-setup` (open), then `http://192.168.4.1`
+    - STA (home WiFi): `http://hid-helper-xxxx.local` (mDNS; `xxxx` = last 4 hex of
+      MAC, lowercase) or `http://<sta-ip>`. `GET /api/status` returns `mdns` and
+      `device_id` (12 lowercase hex, no colons).
+    - Soft-AP setup: join WiFi `usb-hid-s3-XXXX` (`XXXX` = last 4 hex of MAC,
+      uppercase; open by default), then `http://192.168.4.1`
+    - mDNS HTTP service TXT records: `path=/api/status`, `id=<device_id>`, `fw=<version>`
 
     All JSON endpoints send CORS headers (`Access-Control-Allow-Origin: *`)
     for browser / future mobile apps. Control routes feed the same command
@@ -17,14 +21,14 @@ info:
     `Authorization: Bearer <token>`. Soft-AP WiFi provisioning
     (`GET`/`POST /api/wifi` while AP-only) stays open. TCP/BLE sessions
     authenticate with a line: `auth <token>`.
-  version: 0.3.4
+  version: 0.4.0
   contact:
     name: mouseMover
     url: https://github.com/natarajgithub/mouseMover
 
 servers:
-  - url: http://hid-helper.local
-    description: STA via mDNS (preferred)
+  - url: http://hid-helper-xxxx.local
+    description: STA via mDNS (preferred; xxxx = device suffix from /api/status)
   - url: http://192.168.4.1
     description: Soft-AP setup portal
   - url: http://{sta_ip}
@@ -76,14 +80,15 @@ paths:
               example:
                 ok: true
                 name: usb-hid-s3
-                version: "0.3.3"
+                version: "0.4.0"
+                device_id: aabbccddeeff
                 uptime_s: 120
                 heap: 192000
                 usb: ready
                 jiggle: false
                 jiggle_interval_ms: 10000
                 sta_ip: 192.168.2.161
-                mdns: hid-helper.local
+                mdns: hid-helper-eeff.local
     options:
       tags: [status]
       summary: CORS preflight
@@ -274,9 +279,10 @@ paths:
                     mode: sta
                     configured: true
                     ssid: MyNetwork
-                    ap_ssid: usb-hid-s3-setup
+                    ap_ssid: usb-hid-s3-EEFF
                     ap_ip: 192.168.4.1
                     sta_ip: 192.168.2.161
+                    device_id: aabbccddeeff
                     http_port: 80
                     control_port: 3333
                 softAp:
@@ -284,9 +290,10 @@ paths:
                     mode: ap
                     configured: false
                     ssid: ""
-                    ap_ssid: usb-hid-s3-setup
+                    ap_ssid: usb-hid-s3-EEFF
                     ap_ip: 192.168.4.1
                     sta_ip: ""
+                    device_id: aabbccddeeff
                     http_port: 80
                     control_port: 3333
     post:
@@ -329,7 +336,7 @@ paths:
       summary: Forget WiFi credentials
       description: |
         Clears NVS STA credentials. Device reconnects into Soft-AP setup mode
-        (`usb-hid-s3-setup`) so credentials can be provisioned again.
+        (`usb-hid-s3-XXXX`) so credentials can be provisioned again.
       operationId: clearWifi
       responses:
         "200":
@@ -395,7 +402,7 @@ components:
           example: usb-hid-s3
         version:
           type: string
-          example: "0.3.4"
+          example: "0.4.0"
         endpoints:
           type: array
           items:
@@ -412,6 +419,10 @@ components:
           type: string
         version:
           type: string
+        device_id:
+          type: string
+          description: 12 lowercase hex MAC-derived ID (no colons)
+          example: aabbccddeeff
         uptime_s:
           type: integer
           minimum: 0
@@ -430,7 +441,8 @@ components:
           description: Empty when not on STA
         mdns:
           type: string
-          example: hid-helper.local
+          description: Full mDNS FQDN for this device
+          example: hid-helper-eeff.local
 
     JiggleStatus:
       type: object
@@ -566,7 +578,12 @@ components:
           description: Configured STA SSID (may be empty)
         ap_ssid:
           type: string
-          example: usb-hid-s3-setup
+          description: Per-device Soft-AP SSID (usb-hid-s3-XXXX)
+          example: usb-hid-s3-EEFF
+        device_id:
+          type: string
+          description: 12 lowercase hex MAC-derived ID (no colons)
+          example: aabbccddeeff
         ap_ip:
           type: string
           example: 192.168.4.1

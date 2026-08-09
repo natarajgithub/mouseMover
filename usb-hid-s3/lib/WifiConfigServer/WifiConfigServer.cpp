@@ -7,6 +7,7 @@
 #include "CommandSink.h"
 #include "Config.h"
 #include "ControlAuth.h"
+#include "DeviceIdentity.h"
 #include "Logging.h"
 #include "WifiCredentials.h"
 
@@ -236,11 +237,13 @@ void WifiConfigServer::handleGetWifi() {
   json += WifiCredentials::hasSsid() ? "true" : "false";
   json += ",";
   json += "\"ssid\":\"" + jsonEscape(c.ssid) + "\",";
-  json += "\"ap_ssid\":\"" + jsonEscape(String(WIFI_AP_SSID)) + "\",";
+  DeviceIdentity::begin();
+  json += "\"ap_ssid\":\"" + jsonEscape(String(DeviceIdentity::softApSsid())) + "\",";
   json += "\"ap_ip\":\"" + WiFi.softAPIP().toString() + "\",";
   json += "\"sta_ip\":\"";
   json += (WiFi.status() == WL_CONNECTED) ? WiFi.localIP().toString() : "";
   json += "\",";
+  json += "\"device_id\":\"" + String(DeviceIdentity::deviceId()) + "\",";
   json += "\"http_port\":";
   json += String(WIFI_HTTP_PORT);
   json += ",";
@@ -288,10 +291,12 @@ void WifiConfigServer::handleClearWifi() {
 void WifiConfigServer::handleGetStatus() {
   if (!requireApiAuth()) return;
   handleCors();
+  DeviceIdentity::begin();
   String json = "{";
   json += "\"ok\":true,";
   json += "\"name\":\"" + String(FW_NAME) + "\",";
   json += "\"version\":\"" + String(FW_VERSION) + "\",";
+  json += "\"device_id\":\"" + String(DeviceIdentity::deviceId()) + "\",";
   json += "\"uptime_s\":";
   json += String(millis() / 1000);
   json += ",";
@@ -311,7 +316,7 @@ void WifiConfigServer::handleGetStatus() {
   json += (WiFi.status() == WL_CONNECTED) ? WiFi.localIP().toString() : "";
   json += "\",";
   json += "\"mdns\":\"";
-  json += String(MDNS_HOSTNAME) + ".local";
+  json += String(DeviceIdentity::mdnsFqdn());
   json += "\",";
   json += "\"auth_required\":";
   json += controlAuthRequired() ? "true" : "false";

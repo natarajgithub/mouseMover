@@ -46,16 +46,19 @@ cp config.env.example config.env      # set ESP_PORT
 `wifi status|set|clear` · `status` · `version` · `help`
 
 WiFi credentials persist in NVS. With no STA creds, `radio wifi` starts Soft-AP
-`usb-hid-s3-setup` (open by default; set `WIFI_AP_PASS` in `wifi_secrets.h` for
-WPA) with a setup page + REST at `http://192.168.4.1/api/wifi`.
+`usb-hid-s3-XXXX` (last 4 hex of MAC, uppercase; open by default; set
+`WIFI_AP_PASS` in `wifi_secrets.h` for WPA) with a setup page + REST at
+`http://192.168.4.1/api/wifi`.
 With creds, STA joins and exposes:
 
 - **HTTP REST** on `:80` — `GET /api/status`, `GET|POST /api/jiggle`,
   `POST /api/move|type|key|click`, plus `/api/wifi`
 - **TCP line control** on `:3333` (same grammar as serial)
 
-On STA the device also advertises **mDNS** as `hid-helper.local` (HTTP service
-on port 80), so apps can discover it without a hard-coded IP.
+On STA the device also advertises **mDNS** as `hid-helper-xxxx.local` (lowercase
+suffix; HTTP service on port 80 with TXT `path`, `id`, `fw`), so apps can
+discover it without a hard-coded IP. `GET /api/status` returns `mdns` and
+`device_id` (12 lowercase hex).
 
 Optional LAN hardening (compile-time, via `wifi_secrets.h`):
 
@@ -73,7 +76,7 @@ stays open. TCP/BLE: send `auth change-me` once per session before commands.
 | Appearance | Meaning |
 |------------|---------|
 | Solid red | WiFi disconnected (radio off / not associated) |
-| Magenta blink | Soft-AP setup mode (`usb-hid-s3-setup`) |
+| Magenta blink | Soft-AP setup mode (`usb-hid-s3-XXXX`) |
 | Dim solid green | STA connected, jiggle **off** |
 | Cyan breathing | STA connected, jiggle **on** |
 
@@ -83,10 +86,11 @@ OpenAPI / Swagger: [`docs/openapi.yaml`](docs/openapi.yaml)
 Example:
 
 ```bash
-curl http://hid-helper.local/api/status
-curl -X POST http://hid-helper.local/api/jiggle -H 'Content-Type: application/json' -d '{"enabled":true}'
-curl -X POST http://hid-helper.local/api/move -H 'Content-Type: application/json' -d '{"dx":40,"dy":0}'
-curl -X POST http://hid-helper.local/api/type -H 'Content-Type: application/json' -d '{"text":"hello"}'
+# Replace XXXX with your device suffix (from serial `status` or /api/status mdns field)
+curl http://hid-helper-XXXX.local/api/status
+curl -X POST http://hid-helper-XXXX.local/api/jiggle -H 'Content-Type: application/json' -d '{"enabled":true}'
+curl -X POST http://hid-helper-XXXX.local/api/move -H 'Content-Type: application/json' -d '{"dx":40,"dy":0}'
+curl -X POST http://hid-helper-XXXX.local/api/type -H 'Content-Type: application/json' -d '{"text":"hello"}'
 ```
 
 ## Testing

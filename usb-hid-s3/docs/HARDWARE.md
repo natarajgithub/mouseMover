@@ -44,6 +44,6 @@ After power-cycle the host should see USB identity **VID `0xCAFE` / PID `0x4001`
 | Appearance | Meaning |
 |------------|---------|
 | Solid red | WiFi down / not associated |
-| Magenta blink | Soft-AP setup (`usb-hid-s3-setup`) |
+| Magenta blink | Soft-AP setup (`usb-hid-s3-XXXX`; suffix from device MAC) |
 | Dim solid green | STA up, jiggle off |
 | Cyan breathing | STA up, jiggle on |
