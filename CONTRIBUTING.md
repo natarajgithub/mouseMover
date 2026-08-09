@@ -69,7 +69,7 @@ See [`android/README.md`](android/README.md).
 ## What not to commit
 
 - `include/wifi_secrets.h`, `config.env`, `.env`, keys, PEM/P12 files
-- Local lab notes: `docs/PHASE_LOG.md`, `docs/ISSUES.md` (gitignored)
+- Local lab notes: `docs/PHASE_LOG.md`, `docs/ISSUES.md`, `**/PROGRESS.md` (gitignored)
 - `.pio/` build trees
 
 ## Pull requests
