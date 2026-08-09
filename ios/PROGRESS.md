@@ -2,14 +2,16 @@
 
 Living checklist for the iOS companion app. Update this file at the end of each phase.
 
-| Phase | Status | Notes |
-|-------|--------|-------|
-| 0 — Firmware device identity | Pending | Multi-device fields in `/api/status` (see [PR #7](https://github.com/natarajgithub/mouseMover/pull/7)) |
-| 1 — App scaffold | Done | Xcode project, models, service stubs |
-| 2 — Device list & control | Done | SwiftData list, rename, jiggle toggles, add-by-address |
-| 3 — Bonjour discovery | Done | Phase 3a: LAN scan; Phase 3b: Soft-AP wizard |
-| 4 — Soft-AP provisioning | Done | Wizard Path B: join AP, POST `/api/wifi`, rediscover |
-| 5 — Persistence & polish | Partial | SwiftData sync done; Keychain token storage pending |
+## Delivery phases
+
+| Phase | Status | PR / notes |
+|-------|--------|------------|
+| 0 — Firmware device identity | Done (firmware) | [`device_id` + unique mDNS/Soft-AP — PR #7](https://github.com/natarajgithub/mouseMover/pull/7) |
+| 1 — App scaffold | Done | [PR #8](https://github.com/natarajgithub/mouseMover/pull/8) |
+| 2 — Device list & control | Done | [PR #9](https://github.com/natarajgithub/mouseMover/pull/9) |
+| 3 — Bonjour discovery | Done | [PR #10](https://github.com/natarajgithub/mouseMover/pull/10) (LAN scan) |
+| 4 — Soft-AP provisioning | Done | [PR #11](https://github.com/natarajgithub/mouseMover/pull/11) |
+| 5 — Persistence & polish | Done | Docs, SECURITY note, QA checklist (this branch) |
 
 ## Phase 1 — App scaffold
 
@@ -70,6 +72,25 @@ Living checklist for the iOS companion app. Update this file at the end of each 
 
 - [x] Persist known devices with SwiftData
 - [x] Custom display names
-- [ ] API token in Keychain
-- [ ] Onboarding / local network permission prompt copy
-- [ ] App icon and TestFlight build
+- [x] App icon (`Assets.xcassets/AppIcon.appiconset`)
+- [x] Local network permission copy (`NSLocalNetworkUsageDescription`)
+- [x] `ios/README.md` — SECURITY note, build/run, wizard overview, firmware 0.4.0+
+- [x] Manual QA checklist (below)
+- [ ] API token in Keychain (stored in SwiftData today; Keychain migration deferred)
+- [ ] TestFlight / App Store build
+
+## Manual QA checklist
+
+Run on Simulator unless noted. Physical device required for Soft-AP join and local-network prompt.
+
+- [ ] **Unit tests** — `cd ios && xcodebuild … test` (see [`README.md`](README.md))
+- [ ] **Empty state** — launch with no devices; empty copy and **+** visible
+- [ ] **Add by address** — save a lab device by IP/hostname; list shows offline until refresh
+- [ ] **Wizard Path A** — scan finds Bonjour candidate (or empty scan on Simulator); probe + save
+- [ ] **Wizard Path B** (device) — join Soft-AP, provision home Wi‑Fi, rediscover or manual fallback
+- [ ] **Jiggle toggle** — enable/disable on live device; host mouse moves when enabled
+- [ ] **Rename** — detail screen display name persists after relaunch
+- [ ] **Delete** — remove device from list and SwiftData
+- [ ] **Pull to refresh** — updates online/offline badges
+- [ ] **API token** (optional) — with firmware `CONTROL_API_TOKEN` set, token in detail screen unlocks control
+- [ ] **Local network prompt** — first Bonjour scan triggers iOS permission dialog

@@ -39,7 +39,11 @@ Full commands, LED legend, and REST examples:
 [`usb-hid-s3/README.md`](usb-hid-s3/README.md)  
 OpenAPI: [`usb-hid-s3/docs/openapi.yaml`](usb-hid-s3/docs/openapi.yaml)
 
-### 3. Platform support
+### 3. iOS companion (optional)
+
+The **[Mouse Mover](ios/)** SwiftUI app discovers devices on your LAN (Bonjour), provisions new boards over Soft-AP, and toggles jiggle / rename from your phone. Requires firmware **0.4.0+** for the full wizard; see [`ios/README.md`](ios/README.md) for build steps and security notes.
+
+### 4. Platform support
 
 | Check | Where it runs |
 |-------|----------------|

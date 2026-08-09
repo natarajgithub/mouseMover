@@ -30,6 +30,25 @@ Optional on-device (macOS + Waveshare ESP32-S3-Zero/Mini):
 
 Do **not** expect on-device pytest to pass in GitHub Actions.
 
+### iOS companion (`ios/`)
+
+Requires Xcode 15+ on macOS. From the repo root:
+
+```bash
+cd ios
+xcodebuild -project MouseMover.xcodeproj -scheme MouseMover \
+  -destination 'platform=iOS Simulator,name=iPhone 17' test
+```
+
+Build-only (no tests):
+
+```bash
+xcodebuild -project MouseMover.xcodeproj -scheme MouseMover \
+  -destination 'platform=iOS Simulator,name=iPhone 17' build
+```
+
+See [`ios/README.md`](ios/README.md) for Simulator vs device notes (Hotspot Configuration entitlement for Soft-AP wizard).
+
 ## What not to commit
 
 - `include/wifi_secrets.h`, `config.env`, `.env`, keys, PEM/P12 files
