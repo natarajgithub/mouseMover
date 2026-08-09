@@ -11,8 +11,13 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.mkflabs.mousemover.MouseMoverApp
 import com.mkflabs.mousemover.viewmodel.AddByAddressViewModel
+import com.mkflabs.mousemover.viewmodel.AddDeviceWizardViewModel
 import com.mkflabs.mousemover.viewmodel.DeviceDetailViewModel
 import com.mkflabs.mousemover.viewmodel.HomeViewModel
+import com.mkflabs.mousemover.wifi.StubSoftApJoiner
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 
 @Composable
 fun MouseMoverNav() {
@@ -68,8 +73,30 @@ fun MouseMoverNav() {
             )
         }
         composable("wizard") {
-            // Placeholder until wizard-mdns-scan phase
-            WizardPlaceholderScreen(onBack = { nav.popBackStack() })
+            val devices by homeVm.devices.collectAsState()
+            val vm: AddDeviceWizardViewModel =
+                viewModel(
+                    factory =
+                        remember {
+                            AddDeviceWizardViewModel.factory(
+                                repository = app.repository,
+                                browser = app.nsdBrowser(),
+                                api = app.apiClient,
+                                softApJoiner = StubSoftApJoiner(),
+                            )
+                        },
+                )
+            LaunchedEffect(devices) {
+                vm.updateKnownDevices(devices)
+            }
+            AddDeviceWizardScreen(
+                viewModel = vm,
+                onDone = {
+                    homeVm.refresh()
+                    nav.popBackStack()
+                },
+                onCancel = { nav.popBackStack() },
+            )
         }
     }
 }
