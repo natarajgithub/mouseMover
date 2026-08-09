@@ -64,7 +64,7 @@ struct ContentView: View {
             Label("No Devices Yet", systemImage: "computermouse")
         } description: {
             Text("Add a HID helper on your local network to get started.")
-        }         actions: {
+        } actions: {
             Button("Add Device") {
                 showAddWizard = true
             }
@@ -74,13 +74,6 @@ struct ContentView: View {
                 showAddByAddress = true
             }
             .buttonStyle(.bordered)
-
-            #if DEBUG
-            Button("Add Sample Device") {
-                try? viewModel.addSampleDevice(context: modelContext)
-            }
-            .buttonStyle(.bordered)
-            #endif
         }
     }
 
