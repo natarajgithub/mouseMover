@@ -75,6 +75,25 @@ final class DeviceRepository {
         await refreshAll(devices: [device], api: api).isEmpty
     }
 
+    func addFromDiscovery(
+        status: DeviceStatus,
+        fallbackHost: String,
+        displayName: String,
+        token: String?,
+        api: any DeviceAPIClientProtocol
+    ) async throws -> StoredDevice {
+        let deviceId = status.deviceId ?? fallbackHost
+        var device = Device(status: status, fallbackHost: fallbackHost)
+        device.displayName = displayName
+        device.apiToken = token
+
+        try DeviceStore.upsert(device, in: context)
+        guard let stored = try fetchStored(deviceId: deviceId) else {
+            throw DeviceRepositoryError.notFound
+        }
+        return stored
+    }
+
     func addByAddress(host: String, token: String?, api: any DeviceAPIClientProtocol) async throws -> StoredDevice {
         let urls = DeviceEndpointResolver.endpointURLs(mdnsHost: host, staIP: nil)
         guard !urls.isEmpty else { throw DeviceRepositoryError.deviceUnreachable }

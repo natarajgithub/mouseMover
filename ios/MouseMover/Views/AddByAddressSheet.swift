@@ -71,14 +71,3 @@ struct AddByAddressSheet: View {
     }
 }
 
-struct AddDevicePlaceholderView: View {
-    var body: some View {
-        ContentUnavailableView(
-            "Add Device Wizard",
-            systemImage: "plus.circle",
-            description: Text("Guided setup for new HID helpers is coming soon.")
-        )
-        .navigationTitle("Add Device")
-        .navigationBarTitleDisplayMode(.inline)
-    }
-}

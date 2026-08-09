@@ -7,7 +7,7 @@ struct ContentView: View {
     @StateObject private var viewModel = HomeViewModel()
 
     @State private var showAddByAddress = false
-    @State private var showAddPlaceholder = false
+    @State private var showAddWizard = false
 
     var body: some View {
         NavigationStack {
@@ -32,8 +32,8 @@ struct ContentView: View {
                 AddByAddressSheet()
                     .environmentObject(viewModel)
             }
-            .navigationDestination(isPresented: $showAddPlaceholder) {
-                AddDevicePlaceholderView()
+            .sheet(isPresented: $showAddWizard) {
+                AddDeviceWizardView()
             }
         }
         .environmentObject(viewModel)
@@ -58,11 +58,16 @@ struct ContentView: View {
             Label("No Devices Yet", systemImage: "computermouse")
         } description: {
             Text("Add a HID helper on your local network to get started.")
-        } actions: {
+        }         actions: {
+            Button("Add Device") {
+                showAddWizard = true
+            }
+            .buttonStyle(.borderedProminent)
+
             Button("Add by Address") {
                 showAddByAddress = true
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.bordered)
 
             #if DEBUG
             Button("Add Sample Device") {
@@ -78,7 +83,7 @@ struct ContentView: View {
         ToolbarItem(placement: .primaryAction) {
             Menu {
                 Button {
-                    showAddPlaceholder = true
+                    showAddWizard = true
                 } label: {
                     Label("Add Device", systemImage: "plus")
                 }

@@ -23,6 +23,11 @@
 		A10000000000000000000014 /* AddByAddressSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000017 /* AddByAddressSheet.swift */; };
 		A10000000000000000000015 /* MockAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000018 /* MockAPIClient.swift */; };
 		A10000000000000000000016 /* DeviceRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000019 /* DeviceRepositoryTests.swift */; };
+		A10000000000000000000017 /* AddDeviceWizardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000020 /* AddDeviceWizardView.swift */; };
+		A10000000000000000000018 /* AddDeviceWizardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000021 /* AddDeviceWizardViewModel.swift */; };
+		A10000000000000000000019 /* BonjourDiscoveryFilterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000022 /* BonjourDiscoveryFilterTests.swift */; };
+		A10000000000000000000020 /* AddDeviceWizardViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000023 /* AddDeviceWizardViewModelTests.swift */; };
+		A10000000000000000000021 /* MockBonjourBrowser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000024 /* MockBonjourBrowser.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -55,6 +60,11 @@
 		A20000000000000000000017 /* AddByAddressSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddByAddressSheet.swift; sourceTree = "<group>"; };
 		A20000000000000000000018 /* MockAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockAPIClient.swift; sourceTree = "<group>"; };
 		A20000000000000000000019 /* DeviceRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceRepositoryTests.swift; sourceTree = "<group>"; };
+		A20000000000000000000020 /* AddDeviceWizardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddDeviceWizardView.swift; sourceTree = "<group>"; };
+		A20000000000000000000021 /* AddDeviceWizardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddDeviceWizardViewModel.swift; sourceTree = "<group>"; };
+		A20000000000000000000022 /* BonjourDiscoveryFilterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BonjourDiscoveryFilterTests.swift; sourceTree = "<group>"; };
+		A20000000000000000000023 /* AddDeviceWizardViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddDeviceWizardViewModelTests.swift; sourceTree = "<group>"; };
+		A20000000000000000000024 /* MockBonjourBrowser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockBonjourBrowser.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -106,6 +116,9 @@
 				A20000000000000000000010 /* DeviceAPIClientTests.swift */,
 				A20000000000000000000018 /* MockAPIClient.swift */,
 				A20000000000000000000019 /* DeviceRepositoryTests.swift */,
+				A20000000000000000000022 /* BonjourDiscoveryFilterTests.swift */,
+				A20000000000000000000023 /* AddDeviceWizardViewModelTests.swift */,
+				A20000000000000000000024 /* MockBonjourBrowser.swift */,
 			);
 			path = MouseMoverTests;
 			sourceTree = "<group>";
@@ -133,6 +146,7 @@
 			children = (
 				A20000000000000000000016 /* DeviceDetailView.swift */,
 				A20000000000000000000017 /* AddByAddressSheet.swift */,
+				A20000000000000000000020 /* AddDeviceWizardView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -160,6 +174,7 @@
 			isa = PBXGroup;
 			children = (
 				A20000000000000000000008 /* HomeViewModel.swift */,
+				A20000000000000000000021 /* AddDeviceWizardViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -275,6 +290,8 @@
 				A10000000000000000000012 /* DeviceRepository.swift in Sources */,
 				A10000000000000000000013 /* DeviceDetailView.swift in Sources */,
 				A10000000000000000000014 /* AddByAddressSheet.swift in Sources */,
+				A10000000000000000000017 /* AddDeviceWizardView.swift in Sources */,
+				A10000000000000000000018 /* AddDeviceWizardViewModel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -285,6 +302,9 @@
 				A10000000000000000000010 /* DeviceAPIClientTests.swift in Sources */,
 				A10000000000000000000015 /* MockAPIClient.swift in Sources */,
 				A10000000000000000000016 /* DeviceRepositoryTests.swift in Sources */,
+				A10000000000000000000019 /* BonjourDiscoveryFilterTests.swift in Sources */,
+				A10000000000000000000020 /* AddDeviceWizardViewModelTests.swift in Sources */,
+				A10000000000000000000021 /* MockBonjourBrowser.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

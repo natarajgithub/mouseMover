@@ -7,7 +7,7 @@ Living checklist for the iOS companion app. Update this file at the end of each 
 | 0 — Firmware device identity | Pending | Multi-device fields in `/api/status` (see [PR #7](https://github.com/natarajgithub/mouseMover/pull/7)) |
 | 1 — App scaffold | Done | Xcode project, models, service stubs |
 | 2 — Device list & control | Done | SwiftData list, rename, jiggle toggles, add-by-address |
-| 3 — Bonjour discovery | Not started | NWBrowser, auto-probe `/api/status` |
+| 3 — Bonjour discovery | In progress | Phase 3a: LAN scan wizard (this PR) |
 | 4 — Soft-AP provisioning | Not started | Join setup AP, POST `/api/wifi` |
 | 5 — Persistence & polish | Partial | SwiftData sync done; Keychain token storage pending |
 
@@ -35,11 +35,22 @@ Living checklist for the iOS companion app. Update this file at the end of each 
 - [x] DEBUG sample device button on empty state
 - [x] Unit tests: `DeviceRepository.setJiggle`, endpoint URL resolution
 
-## Phase 3 — Bonjour discovery (next)
+## Phase 3 — Bonjour discovery
 
-- [ ] Implement `BonjourBrowser` with `NWBrowser` for `_http._tcp.`
-- [ ] Resolve host/port and probe `/api/status`
-- [ ] Auto-add discovered devices; dedupe by `device_id`
+### Phase 3a — Add-device wizard (LAN mDNS scan)
+
+- [x] `BonjourBrowser` — `NWBrowser` for `_http._tcp`, filter by TXT `id` or `hid-helper` name
+- [x] `BonjourDiscoveryFilter` — unit-tested candidate matching
+- [x] `AddDeviceWizardView` — choose path, scan list, probe `/api/status`, confirm & save
+- [x] Soft-AP path disabled with "Coming next" placeholder
+- [x] Home `+` and empty state wired to wizard sheet
+- [x] `DeviceRepository.addFromDiscovery` for wizard save
+- [x] Unit tests: filter logic, wizard view model state transitions (mock browser + API)
+
+### Phase 3b — (next)
+
+- [ ] Soft-AP provisioning wizard path
+- [ ] Auto-add on discovery (optional polish)
 
 ## Phase 4 — Soft-AP provisioning
 
