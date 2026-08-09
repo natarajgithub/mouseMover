@@ -21,7 +21,10 @@ struct ContentView: View {
             .navigationTitle("Mouse Mover")
             .toolbar { toolbarContent }
             .task(id: storedDevices.map(\.deviceId)) {
-                await viewModel.refreshAll(devices: storedDevices, context: modelContext)
+                while !Task.isCancelled {
+                    await viewModel.refreshQuietly(devices: storedDevices, context: modelContext)
+                    try? await Task.sleep(nanoseconds: HomeViewModel.presencePollNanoseconds)
+                }
             }
             .refreshable {
                 await viewModel.refreshAll(devices: storedDevices, context: modelContext)
