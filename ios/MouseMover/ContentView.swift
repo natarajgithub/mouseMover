@@ -7,7 +7,7 @@ struct ContentView: View {
     @StateObject private var viewModel = HomeViewModel()
 
     @State private var showAddByAddress = false
-    @State private var showAddPlaceholder = false
+    @State private var showAddWizard = false
 
     var body: some View {
         NavigationStack {
@@ -20,6 +20,9 @@ struct ContentView: View {
             }
             .navigationTitle("Mouse Mover")
             .toolbar { toolbarContent }
+            .task(id: storedDevices.map(\.deviceId)) {
+                await viewModel.refreshAll(devices: storedDevices, context: modelContext)
+            }
             .refreshable {
                 await viewModel.refreshAll(devices: storedDevices, context: modelContext)
             }
@@ -30,10 +33,9 @@ struct ContentView: View {
             }
             .sheet(isPresented: $showAddByAddress) {
                 AddByAddressSheet()
-                    .environmentObject(viewModel)
             }
-            .navigationDestination(isPresented: $showAddPlaceholder) {
-                AddDevicePlaceholderView()
+            .sheet(isPresented: $showAddWizard) {
+                AddDeviceWizardView()
             }
         }
         .environmentObject(viewModel)
@@ -46,7 +48,11 @@ struct ContentView: View {
             } label: {
                 DeviceRowView(
                     device: device,
-                    isOffline: viewModel.offlineDeviceIds.contains(device.deviceId),
+                    presence: DevicePresenceStatus.resolve(
+                        isReachable: !viewModel.offlineDeviceIds.contains(device.deviceId),
+                        jiggleEnabled: device.jiggleEnabled,
+                        staIP: device.staIP
+                    ),
                     jiggleBinding: jiggleBinding(for: device)
                 )
             }
@@ -58,11 +64,16 @@ struct ContentView: View {
             Label("No Devices Yet", systemImage: "computermouse")
         } description: {
             Text("Add a HID helper on your local network to get started.")
-        } actions: {
+        }         actions: {
+            Button("Add Device") {
+                showAddWizard = true
+            }
+            .buttonStyle(.borderedProminent)
+
             Button("Add by Address") {
                 showAddByAddress = true
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.bordered)
 
             #if DEBUG
             Button("Add Sample Device") {
@@ -78,7 +89,7 @@ struct ContentView: View {
         ToolbarItem(placement: .primaryAction) {
             Menu {
                 Button {
-                    showAddPlaceholder = true
+                    showAddWizard = true
                 } label: {
                     Label("Add Device", systemImage: "plus")
                 }
@@ -114,31 +125,29 @@ struct ContentView: View {
 
 private struct DeviceRowView: View {
     let device: StoredDevice
-    let isOffline: Bool
+    let presence: DevicePresenceStatus
     @Binding var jiggleBinding: Bool
 
     var body: some View {
-        HStack {
+        HStack(spacing: 12) {
+            Circle()
+                .fill(presence.ledColor)
+                .frame(width: 10, height: 10)
+                .accessibilityHidden(true)
+
             VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 6) {
-                    Text(device.displayName)
-                        .font(.headline)
-                    if isOffline {
-                        Text("Offline")
-                            .font(.caption2)
-                            .fontWeight(.semibold)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(.red.opacity(0.15))
-                            .foregroundStyle(.red)
-                            .clipShape(Capsule())
-                    }
-                }
-                Text(subtitle)
+                Text(device.displayName)
+                    .font(.headline)
+                Text(presence.title)
                     .font(.subheadline)
+                    .foregroundStyle(presence.ledColor)
+                Text(subtitle)
+                    .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("\(device.displayName), \(presence.title)")
 
             Spacer()
 

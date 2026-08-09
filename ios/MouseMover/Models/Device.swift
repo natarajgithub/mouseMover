@@ -64,6 +64,42 @@ struct DeviceStatus: Codable, Equatable, Sendable {
         case mdns
         case authRequired = "auth_required"
     }
+
+    init(
+        ok: Bool,
+        name: String,
+        version: String,
+        deviceId: String? = nil,
+        jiggle: Bool,
+        jiggleIntervalMs: Int,
+        staIp: String? = nil,
+        mdns: String? = nil,
+        authRequired: Bool = false
+    ) {
+        self.ok = ok
+        self.name = name
+        self.version = version
+        self.deviceId = deviceId
+        self.jiggle = jiggle
+        self.jiggleIntervalMs = jiggleIntervalMs
+        self.staIp = staIp
+        self.mdns = mdns
+        self.authRequired = authRequired
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        ok = try container.decodeIfPresent(Bool.self, forKey: .ok) ?? true
+        name = try container.decodeIfPresent(String.self, forKey: .name) ?? "usb-hid-s3"
+        version = try container.decodeIfPresent(String.self, forKey: .version) ?? "unknown"
+        deviceId = try container.decodeIfPresent(String.self, forKey: .deviceId)
+        jiggle = try container.decodeIfPresent(Bool.self, forKey: .jiggle) ?? false
+        jiggleIntervalMs = try container.decodeIfPresent(Int.self, forKey: .jiggleIntervalMs) ?? 10000
+        staIp = try container.decodeIfPresent(String.self, forKey: .staIp)
+        mdns = try container.decodeIfPresent(String.self, forKey: .mdns)
+        // Older firmware (e.g. 0.3.3) omits auth_required.
+        authRequired = try container.decodeIfPresent(Bool.self, forKey: .authRequired) ?? false
+    }
 }
 
 struct JiggleRequest: Encodable, Sendable {
@@ -81,11 +117,14 @@ struct WifiProvisionRequest: Encodable, Sendable {
 }
 
 struct WifiStatus: Codable, Equatable, Sendable {
-    let ok: Bool
+    let ok: Bool?
     let mode: String?
     let configured: Bool?
     let ssid: String?
     let staIp: String?
+    let deviceId: String?
+    let apSsid: String?
+    let apIp: String?
 
     enum CodingKeys: String, CodingKey {
         case ok
@@ -93,5 +132,8 @@ struct WifiStatus: Codable, Equatable, Sendable {
         case configured
         case ssid
         case staIp = "sta_ip"
+        case deviceId = "device_id"
+        case apSsid = "ap_ssid"
+        case apIp = "ap_ip"
     }
 }
