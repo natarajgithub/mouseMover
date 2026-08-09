@@ -116,4 +116,25 @@ final class DeviceEndpointResolverTests: XCTestCase {
         )
         XCTAssertEqual(urls.count, 1)
     }
+
+    func testSanitizeHostStripsInterfaceZone() {
+        XCTAssertEqual(
+            DeviceEndpointResolver.sanitizeHost("192.168.2.161%en0"),
+            "192.168.2.161"
+        )
+    }
+
+    func testBaseURLFromScopedIPv4() {
+        XCTAssertEqual(
+            DeviceEndpointResolver.baseURL(from: "192.168.2.161%en0")?.absoluteString,
+            "http://192.168.2.161/"
+        )
+    }
+
+    func testBaseURLWithPortFromScopedHost() {
+        XCTAssertEqual(
+            DeviceEndpointResolver.baseURL(host: "192.168.2.161%en0", port: 80)?.absoluteString,
+            "http://192.168.2.161/"
+        )
+    }
 }

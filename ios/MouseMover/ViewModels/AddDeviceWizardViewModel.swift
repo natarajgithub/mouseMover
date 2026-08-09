@@ -294,10 +294,7 @@ final class AddDeviceWizardViewModel: ObservableObject {
     }
 
     static func baseURL(for candidate: DiscoveredService) -> URL? {
-        if candidate.port == 80 {
-            return DeviceEndpointResolver.baseURL(from: candidate.host)
-        }
-        return URL(string: "http://\(candidate.host):\(candidate.port)/")
+        DeviceEndpointResolver.baseURL(host: candidate.host, port: candidate.port)
     }
 
     static func defaultDisplayName(for status: DeviceStatus) -> String {

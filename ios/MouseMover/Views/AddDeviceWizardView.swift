@@ -83,7 +83,7 @@ struct AddDeviceWizardView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Scan Local Network")
                                 .foregroundStyle(.primary)
-                            Text("Find HID helpers already on your Wi‑Fi.")
+                            Text("Find Mouse Helper in your Network")
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
                         }
@@ -97,7 +97,7 @@ struct AddDeviceWizardView: View {
                 } label: {
                     Label {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("Set Up New Device (Soft‑AP)")
+                            Text("Set Up New Device")
                                 .foregroundStyle(.primary)
                             Text("Join the device setup network and provision Wi‑Fi.")
                                 .font(.footnote)
@@ -108,7 +108,7 @@ struct AddDeviceWizardView: View {
                     }
                 }
             } footer: {
-                Text("Scanning uses Bonjour to find `_http._tcp` services advertising HID helpers on your LAN.")
+                Text("Scanning uses Bonjour to find Mouse Helpers in your network")
             }
         }
     }
@@ -117,7 +117,7 @@ struct AddDeviceWizardView: View {
         discoveryList(
             candidates: viewModel.candidates,
             emptyTitle: "Scanning…",
-            emptyDescription: "Looking for HID helpers on your local network."
+            emptyDescription: "Looking for Mouse Helpers on your local network."
         )
     }
 
@@ -334,7 +334,7 @@ struct AddDeviceWizardView: View {
                             Text(candidate.name)
                                 .font(.headline)
                                 .foregroundStyle(.primary)
-                            Text("\(candidate.host):\(candidate.port)")
+                            Text(DeviceEndpointResolver.sanitizeHost(candidate.host))
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                             if let deviceId = candidate.deviceId {

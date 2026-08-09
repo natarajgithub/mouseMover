@@ -153,7 +153,8 @@ final class BonjourBrowser: BonjourBrowserProtocol {
                 let host: String
                 let port: Int
                 if case let .hostPort(endpointHost, endpointPort) = connection.currentPath?.remoteEndpoint {
-                    host = "\(endpointHost)"
+                    // NWEndpoint.Host string forms often include "%en0" zone IDs — strip them.
+                    host = DeviceEndpointResolver.sanitizeHost(self.string(from: endpointHost))
                     port = Int(endpointPort.rawValue)
                 } else {
                     host = self.hostLabel(from: name, domain: domain)
@@ -207,6 +208,19 @@ final class BonjourBrowser: BonjourBrowserProtocol {
             return "\(name).local"
         }
         return "\(name).\(trimmedDomain)"
+    }
+
+    private func string(from host: NWEndpoint.Host) -> String {
+        switch host {
+        case let .name(hostname, _):
+            return hostname
+        case let .ipv4(address):
+            return "\(address)"
+        case let .ipv6(address):
+            return "\(address)"
+        @unknown default:
+            return "\(host)"
+        }
     }
 
     private func txtDictionary(from metadata: NWBrowser.Result.Metadata) -> [String: String] {
