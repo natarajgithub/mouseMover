@@ -6,10 +6,10 @@
  * Values the test suite reads back (FW_VERSION) live here.
  */
 
-#define FW_VERSION      "0.3.3"
+#define FW_VERSION      "0.3.4"
 #define FW_NAME         "usb-hid-s3"
-// USB bcdDevice (0x0303 = v3.03) reported to the host.
-#define FW_VERSION_BCD  0x0303
+// USB bcdDevice (0x0304 = v3.04) reported to the host.
+#define FW_VERSION_BCD  0x0304
 
 // --- USB identity (custom VID/PID so the host drops the boot-time Espressif id) ---
 // Prefixed to avoid colliding with USB_VID/USB_PID/... from the S3 variant's
@@ -55,11 +55,16 @@
 #ifndef WIFI_PASS
 #define WIFI_PASS ""
 #endif
+#ifndef WIFI_AP_PASS
+#define WIFI_AP_PASS ""  // empty = open Soft-AP (easiest phone setup)
+#endif
+#ifndef CONTROL_API_TOKEN
+#define CONTROL_API_TOKEN ""  // empty = no HTTP/TCP/BLE auth
+#endif
 #define WIFI_CONNECT_TIMEOUT_MS 15000UL
 
 // Soft-AP setup portal (used when no STA credentials are available).
 #define WIFI_AP_SSID     "usb-hid-s3-setup"
-#define WIFI_AP_PASS     ""          // open AP for easiest phone/app setup
 #define WIFI_AP_CHANNEL  1
 #define WIFI_HTTP_PORT   80
 
