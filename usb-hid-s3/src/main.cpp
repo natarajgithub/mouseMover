@@ -19,6 +19,7 @@
 
 #include "CommandParser.h"
 #include "CommandSink.h"
+#include "DeviceIdentity.h"
 #include "JiggleEngine.h"
 #include "KeyMap.h"
 #include "RadioMode.h"
@@ -312,6 +313,7 @@ static void printBanner() {
 // ---------------------------------------------------------------------------
 void setup() {
   g_hidMutex = xSemaphoreCreateMutex();
+  DeviceIdentity::begin();
 
   // Full USB bring-up, in order, BEFORE the single USB.begin():
   //   1) identity (VID/PID/strings)  2) HID devices  3) CDC  4) USB.begin()

@@ -10,6 +10,7 @@
 #include "Config.h"
 #include "ControlAuth.h"
 #include "CommandSink.h"
+#include "DeviceIdentity.h"
 #include "Logging.h"
 #include "WifiCredentials.h"
 #include "WifiConfigServer.h"
@@ -134,11 +135,13 @@ bool RadioManager::setMode(RadioMode m) {
 // ---------------------------------------------------------------------------
 void RadioManager::startSoftAp() {
   softAp_ = true;
+  DeviceIdentity::begin();
   WiFi.mode(WIFI_AP);
+  const char *apSsid = DeviceIdentity::softApSsid();
   const bool openAp = (WIFI_AP_PASS[0] == '\0');
   bool ok = openAp
-                ? WiFi.softAP(WIFI_AP_SSID, nullptr, WIFI_AP_CHANNEL)
-                : WiFi.softAP(WIFI_AP_SSID, WIFI_AP_PASS, WIFI_AP_CHANNEL);
+                ? WiFi.softAP(apSsid, nullptr, WIFI_AP_CHANNEL)
+                : WiFi.softAP(apSsid, WIFI_AP_PASS, WIFI_AP_CHANNEL);
   if (!ok) {
     snprintf(status_, sizeof(status_), "wifi:ap-fail");
     LOG_WIFI("Soft-AP start failed");
@@ -148,7 +151,7 @@ void RadioManager::startSoftAp() {
   IPAddress ip = WiFi.softAPIP();
   snprintf(status_, sizeof(status_), "wifi:ap");
   LOG_WIFI("soft-ap ssid=\"%s\" ip=%s http=:%d (configure via REST /api/wifi)",
-           WIFI_AP_SSID, ip.toString().c_str(), WIFI_HTTP_PORT);
+           apSsid, ip.toString().c_str(), WIFI_HTTP_PORT);
   g_wifiConfig.begin();
 }
 
@@ -163,20 +166,25 @@ void RadioManager::startSta(const String &ssid, const String &pass) {
     delay(200);
   }
   if (WiFi.status() == WL_CONNECTED) {
+    DeviceIdentity::begin();
     s_tcpServer.begin();
     s_tcpServer.setNoDelay(true);
     g_wifiConfig.begin();  // STA REST control API on :80
-    if (MDNS.begin(MDNS_HOSTNAME)) {
+    const char *mdnsHost = DeviceIdentity::mdnsHostname();
+    if (MDNS.begin(mdnsHost)) {
       MDNS.addService("http", "tcp", WIFI_HTTP_PORT);
       MDNS.addServiceTxt("http", "tcp", "path", "/api/status");
-      LOG_WIFI("mDNS started as %s.local (http :%d)", MDNS_HOSTNAME, WIFI_HTTP_PORT);
+      MDNS.addServiceTxt("http", "tcp", "id", DeviceIdentity::deviceId());
+      MDNS.addServiceTxt("http", "tcp", "fw", FW_VERSION);
+      LOG_WIFI("mDNS started as %s (http :%d)", DeviceIdentity::mdnsFqdn(),
+               WIFI_HTTP_PORT);
     } else {
       LOG_WIFI("mDNS start failed");
     }
     snprintf(status_, sizeof(status_), "wifi:%s", WiFi.localIP().toString().c_str());
-    LOG_WIFI("connected ip=%s control-port=%d http=:%d mdns=%s.local",
+    LOG_WIFI("connected ip=%s control-port=%d http=:%d mdns=%s",
              WiFi.localIP().toString().c_str(), WIFI_CONTROL_PORT, WIFI_HTTP_PORT,
-             MDNS_HOSTNAME);
+             DeviceIdentity::mdnsFqdn());
   } else {
     LOG_WIFI("connect timeout; falling back to Soft-AP setup");
     WiFi.disconnect(true);

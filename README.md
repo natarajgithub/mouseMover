@@ -12,7 +12,7 @@ keyboard (**hid-helper**), with optional WiFi/BLE remote control.
 |------|------------------|
 | **mouseMover** | GitHub repository |
 | **usb-hid-s3** | Firmware folder / USB product family name |
-| **hid-helper** | mDNS hostname (`hid-helper.local`) |
+| **hid-helper** | mDNS hostname prefix (`hid-helper-xxxx.local`; suffix from device MAC) |
 
 ## Getting started
 
@@ -33,7 +33,7 @@ cp config.env.example config.env                             # set ESP_PORT
 # Enter download mode: hold BOOT, tap RESET, release BOOT
 pio run -e esp32s3 -t upload
 # Power-cycle the USB cable so the app enumerates as VID 0xCAFE
-curl http://hid-helper.local/api/status
+curl http://hid-helper-XXXX.local/api/status   # XXXX = device suffix from /api/status
 ```
 
 Full commands, LED legend, and REST examples:

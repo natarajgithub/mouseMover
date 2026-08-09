@@ -15,7 +15,7 @@ Out of the box:
 
 | Surface | Default |
 |---------|---------|
-| Soft-AP `usb-hid-s3-setup` | **Open** (no password) while provisioning |
+| Soft-AP `usb-hid-s3-XXXX` (per-device) | **Open** (no password) while provisioning |
 | HTTP REST (`:80`) | **No authentication** |
 | TCP line control (`:3333`) | **No authentication** |
 | BLE NUS control | Pairing/bonding not required by default |
