@@ -47,11 +47,3 @@
 **/.gradle/
 **/local.properties
 **/captures/
-
-# Android
-android/.gradle/
-android/**/build/
-android/local.properties
-android/*.iml
-android/captures/
-

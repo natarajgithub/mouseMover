@@ -62,6 +62,9 @@ struct DeviceDetailView: View {
         }
         .navigationTitle(displayName.isEmpty ? device.displayName : displayName)
         .navigationBarTitleDisplayMode(.inline)
+        .task {
+            await viewModel.refreshDevice(device, context: modelContext)
+        }
         .onAppear {
             displayName = device.displayName
             apiToken = device.apiToken ?? ""

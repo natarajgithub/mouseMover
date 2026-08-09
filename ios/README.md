@@ -24,7 +24,6 @@ SwiftUI companion app for discovering and controlling **mouseMover** ESP32-S3 de
 |------|---------|
 | `MouseMover/` | App sources, assets, Info.plist |
 | `MouseMoverTests/` | Unit tests (API decoding, wizard state, etc.) |
-| `PROGRESS.md` | Phase checklist and manual QA |
 
 ## Build and run
 
@@ -81,4 +80,16 @@ Configured in `MouseMover/Info.plist`:
 
 ## Manual QA
 
-See [`PROGRESS.md`](PROGRESS.md#manual-qa-checklist) for a release smoke checklist.
+Run on Simulator unless noted. Physical device required for Soft-AP join and the local-network prompt.
+
+- [ ] **Unit tests** — `xcodebuild … test` (see above)
+- [ ] **Empty state** — launch with no devices; empty copy and **+** visible
+- [ ] **Add by address** — save a lab device by IP/hostname; list shows offline until refresh
+- [ ] **Wizard Path A** — scan finds Bonjour candidate (or empty scan on Simulator); probe + save
+- [ ] **Wizard Path B** (device) — join Soft-AP, provision home Wi‑Fi, rediscover or manual fallback
+- [ ] **Jiggle toggle** — enable/disable on live device; host mouse moves when enabled
+- [ ] **Rename** — detail screen display name persists after relaunch
+- [ ] **Delete** — remove device from list and SwiftData
+- [ ] **Pull to refresh / presence poll** — online/offline badges track reachability
+- [ ] **API token** (optional) — with firmware `CONTROL_API_TOKEN` set, token in detail unlocks control
+- [ ] **Local network prompt** — first Bonjour scan triggers iOS permission dialog
