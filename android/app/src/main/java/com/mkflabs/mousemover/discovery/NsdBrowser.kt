@@ -26,19 +26,15 @@ interface NsdBrowser : RadioDiscovery {
     var onUpdate: ((List<DiscoveredService>) -> Unit)?
 }
 
-/** Scaffold stub — real NSD wired in wizard-mdns-scan phase. */
+/** Test / scaffold stub. */
 class StubNsdBrowser : NsdBrowser {
     override var onUpdate: ((List<DiscoveredService>) -> Unit)? = null
     override fun start() {
         onUpdate?.invoke(emptyList())
     }
     override fun stop() = Unit
-}
 
-object DiscoveryFilter {
-    fun isCandidate(serviceName: String, host: String, txt: Map<String, String>): Boolean {
-        if (txt["id"] != null) return true
-        val haystack = "$serviceName $host".lowercase()
-        return haystack.contains("hid-helper")
+    fun emit(services: List<DiscoveredService>) {
+        onUpdate?.invoke(DiscoveryFilter.deduplicate(services))
     }
 }
