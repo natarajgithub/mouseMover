@@ -14,7 +14,7 @@ import com.mkflabs.mousemover.viewmodel.AddByAddressViewModel
 import com.mkflabs.mousemover.viewmodel.AddDeviceWizardViewModel
 import com.mkflabs.mousemover.viewmodel.DeviceDetailViewModel
 import com.mkflabs.mousemover.viewmodel.HomeViewModel
-import com.mkflabs.mousemover.wifi.StubSoftApJoiner
+import com.mkflabs.mousemover.wifi.AndroidSoftApJoiner
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
@@ -82,7 +82,7 @@ fun MouseMoverNav() {
                                 repository = app.repository,
                                 browser = app.nsdBrowser(),
                                 api = app.apiClient,
-                                softApJoiner = StubSoftApJoiner(),
+                                softApJoiner = AndroidSoftApJoiner(app),
                             )
                         },
                 )

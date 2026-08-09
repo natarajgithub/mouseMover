@@ -4,28 +4,33 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Radar
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -51,16 +56,19 @@ fun AddDeviceWizardScreen(
     val apiToken by viewModel.apiToken.collectAsState()
     val probing by viewModel.probing.collectAsState()
     val saving by viewModel.saving.collectAsState()
+    val joining by viewModel.joining.collectAsState()
+    val provisioning by viewModel.provisioning.collectAsState()
     val error by viewModel.error.collectAsState()
     val saved by viewModel.saved.collectAsState()
-    val known by viewModel.known.collectAsState()
+    val softApSsid by viewModel.softApSsid.collectAsState()
+    val softApPassword by viewModel.softApPassword.collectAsState()
+    val homeSsid by viewModel.homeSsid.collectAsState()
+    val homePassword by viewModel.homePassword.collectAsState()
+    val manualHost by viewModel.manualHost.collectAsState()
+    val wifiStatus by viewModel.wifiStatus.collectAsState()
 
     LaunchedEffect(saved) {
         if (saved) onDone()
-    }
-
-    DisposableEffect(Unit) {
-        onDispose { /* ViewModel.onCleared stops browser */ }
     }
 
     if (error != null) {
@@ -77,7 +85,7 @@ fun AddDeviceWizardScreen(
             WizardStep.ChoosePath -> "Add Device"
             WizardStep.Scanning -> "Scan Network"
             WizardStep.Confirm -> "Confirm Device"
-            WizardStep.SoftApPlaceholder -> "Set Up New Device"
+            else -> "Set Up New Device"
         }
 
     Scaffold(
@@ -90,6 +98,10 @@ fun AddDeviceWizardScreen(
                             when (step) {
                                 WizardStep.ChoosePath -> onCancel()
                                 WizardStep.Confirm -> viewModel.backFromConfirm()
+                                WizardStep.SoftApJoin -> viewModel.backFromSoftApJoin()
+                                WizardStep.SoftApHomeWifi -> viewModel.backFromHomeWifi()
+                                WizardStep.SoftApReconnect -> viewModel.backFromReconnect()
+                                WizardStep.SoftApDiscover -> viewModel.backFromDiscover()
                                 else -> viewModel.backToChoose()
                             }
                         },
@@ -111,14 +123,12 @@ fun AddDeviceWizardScreen(
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             when (step) {
                 WizardStep.ChoosePath -> ChoosePath(viewModel)
-                WizardStep.Scanning -> {
-                    val visible = candidates.filter { known.match(it) == null }
-                    val hidden = candidates.isNotEmpty() && visible.size < candidates.size
+                WizardStep.Scanning ->
                     ScanList(
-                        candidates = visible,
-                        emptyTitle = if (hidden) "Already Added" else "Scanning…",
+                        candidates = viewModel.newCandidates,
+                        emptyTitle = if (viewModel.hasHiddenKnown) "Already Added" else "Scanning…",
                         emptyBody =
-                            if (hidden) {
+                            if (viewModel.hasHiddenKnown) {
                                 "All Mouse Helpers found on the network are already in your device list."
                             } else {
                                 "Looking for Mouse Helpers on your local network."
@@ -126,8 +136,7 @@ fun AddDeviceWizardScreen(
                         onSelect = viewModel::selectCandidate,
                         enabled = !probing,
                     )
-                }
-                WizardStep.Confirm -> {
+                WizardStep.Confirm ->
                     probed?.let {
                         ConfirmDeviceForm(
                             probed = it,
@@ -138,19 +147,39 @@ fun AddDeviceWizardScreen(
                             showAuthToken = it.status.authRequired,
                         )
                     }
-                }
-                WizardStep.SoftApPlaceholder -> {
-                    Column(modifier = Modifier.padding(24.dp)) {
-                        Text("Soft-AP setup arrives in the next PR.")
-                        Text(
-                            "For now use Scan Local Network or Add by Address.",
-                            modifier = Modifier.padding(top = 8.dp),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
+                WizardStep.SoftApInstructions -> SoftApInstructions(viewModel)
+                WizardStep.SoftApJoin ->
+                    SoftApJoinForm(
+                        ssid = softApSsid,
+                        password = softApPassword,
+                        onSsid = viewModel::updateSoftApSsid,
+                        onPassword = viewModel::updateSoftApPassword,
+                        onJoin = viewModel::joinSoftAp,
+                        onContinue = viewModel::continueWithoutJoining,
+                        busy = joining || probing,
+                    )
+                WizardStep.SoftApHomeWifi ->
+                    SoftApHomeWifiForm(
+                        wifiStatus = wifiStatus,
+                        homeSsid = homeSsid,
+                        homePassword = homePassword,
+                        onHomeSsid = viewModel::updateHomeSsid,
+                        onHomePassword = viewModel::updateHomePassword,
+                        onProvision = viewModel::provisionHomeWifi,
+                        busy = provisioning,
+                    )
+                WizardStep.SoftApReconnect -> SoftApReconnect(viewModel)
+                WizardStep.SoftApDiscover ->
+                    SoftApDiscover(
+                        candidates = viewModel.newCandidates,
+                        manualHost = manualHost,
+                        onManualHost = viewModel::updateManualHost,
+                        onSelect = viewModel::selectCandidate,
+                        onProbeManual = viewModel::probeManualAddress,
+                        probing = probing,
+                    )
             }
-            if (probing || saving) {
+            if (probing || saving || joining || provisioning) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             }
         }
@@ -172,12 +201,123 @@ private fun ChoosePath(viewModel: AddDeviceWizardViewModel) {
             leadingContent = { Icon(Icons.Default.Wifi, contentDescription = null) },
             modifier = Modifier.clickable { viewModel.chooseSoftAp() },
         )
-        Text(
-            "Scanning uses mDNS/NSD to find Mouse Helpers on your network",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 8.dp),
+    }
+}
+
+@Composable
+private fun SoftApInstructions(viewModel: AddDeviceWizardViewModel) {
+    Column(modifier = Modifier.padding(16.dp).verticalScroll(rememberScrollState())) {
+        Text("Before You Start", style = MaterialTheme.typography.titleMedium)
+        Text("1. Power on the HID helper.")
+        Text("2. Wait for the magenta setup LED.")
+        Text("3. The device broadcasts a setup Wi‑Fi network named like `usb-hid-s3-XXXX`.")
+        Button(onClick = viewModel::continueFromInstructions, modifier = Modifier.padding(top = 16.dp)) {
+            Text("Continue")
+        }
+    }
+}
+
+@Composable
+private fun SoftApJoinForm(
+    ssid: String,
+    password: String,
+    onSsid: (String) -> Unit,
+    onPassword: (String) -> Unit,
+    onJoin: () -> Unit,
+    onContinue: () -> Unit,
+    busy: Boolean,
+) {
+    Column(modifier = Modifier.padding(16.dp).verticalScroll(rememberScrollState())) {
+        OutlinedTextField(value = ssid, onValueChange = onSsid, label = { Text("Setup network (SSID)") }, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(
+            value = password,
+            onValueChange = onPassword,
+            label = { Text("Password (optional)") },
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
         )
+        Text(
+            "Join the device Soft‑AP, then we'll connect at 192.168.4.1. Emulator: connect in system Wi‑Fi, then Continue.",
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.padding(vertical = 8.dp),
+        )
+        Button(onClick = onJoin, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text("Join Setup Network") }
+        TextButton(onClick = onContinue, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text("Continue") }
+    }
+}
+
+@Composable
+private fun SoftApHomeWifiForm(
+    wifiStatus: com.mkflabs.mousemover.network.WifiStatus?,
+    homeSsid: String,
+    homePassword: String,
+    onHomeSsid: (String) -> Unit,
+    onHomePassword: (String) -> Unit,
+    onProvision: () -> Unit,
+    busy: Boolean,
+) {
+    Column(modifier = Modifier.padding(16.dp).verticalScroll(rememberScrollState())) {
+        wifiStatus?.apSsid?.let { Text("Setup network: $it") }
+        wifiStatus?.deviceId?.let { Text("Device ID: $it") }
+        OutlinedTextField(
+            value = homeSsid,
+            onValueChange = onHomeSsid,
+            label = { Text("Home Wi‑Fi SSID") },
+            modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+        )
+        OutlinedTextField(
+            value = homePassword,
+            onValueChange = onHomePassword,
+            label = { Text("Home Wi‑Fi password") },
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+        )
+        Button(onClick = onProvision, enabled = !busy && homeSsid.isNotBlank(), modifier = Modifier.padding(top = 16.dp).fillMaxWidth()) {
+            Text("Save Wi‑Fi to Device")
+        }
+    }
+}
+
+@Composable
+private fun SoftApReconnect(viewModel: AddDeviceWizardViewModel) {
+    Column(modifier = Modifier.padding(16.dp)) {
+        Text("Reconnect your phone to your home Wi‑Fi, then continue to find the device on the LAN.")
+        Button(onClick = viewModel::continueAfterReconnect, modifier = Modifier.padding(top = 16.dp)) {
+            Text("Continue")
+        }
+    }
+}
+
+@Composable
+private fun SoftApDiscover(
+    candidates: List<DiscoveredService>,
+    manualHost: String,
+    onManualHost: (String) -> Unit,
+    onSelect: (DiscoveredService) -> Unit,
+    onProbeManual: () -> Unit,
+    probing: Boolean,
+) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        Box(modifier = Modifier.weight(1f).heightIn(min = 120.dp)) {
+            ScanList(
+                candidates = candidates,
+                emptyTitle = "Looking for device…",
+                emptyBody = "Searching your home network for the provisioned HID helper.",
+                onSelect = onSelect,
+                enabled = !probing,
+            )
+        }
+        Column(modifier = Modifier.padding(16.dp)) {
+            OutlinedTextField(
+                value = manualHost,
+                onValueChange = onManualHost,
+                label = { Text("Host or IP") },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Button(
+                onClick = onProbeManual,
+                enabled = !probing && manualHost.isNotBlank(),
+                modifier = Modifier.padding(top = 8.dp),
+            ) { Text("Probe Address") }
+        }
     }
 }
 
@@ -196,25 +336,16 @@ private fun ScanList(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(emptyTitle, style = MaterialTheme.typography.titleLarge)
-            Text(
-                emptyBody,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 8.dp),
-            )
+            Text(emptyBody, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp))
         }
     } else {
         LazyColumn {
             items(candidates, key = { it.id }) { candidate ->
                 ListItem(
                     headlineContent = { Text(candidate.name) },
-                    supportingContent = {
-                        Text(DeviceEndpointResolver.sanitizeHost(candidate.host))
-                    },
+                    supportingContent = { Text(DeviceEndpointResolver.sanitizeHost(candidate.host)) },
                     overlineContent = candidate.deviceId?.let { { Text(it) } },
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .clickable(enabled = enabled) { onSelect(candidate) },
+                    modifier = Modifier.fillMaxWidth().clickable(enabled = enabled) { onSelect(candidate) },
                 )
             }
         }
