@@ -52,6 +52,7 @@ OpenAPI: [`usb-hid-s3/docs/openapi.yaml`](usb-hid-s3/docs/openapi.yaml)
 | Folder | Purpose |
 |--------|---------|
 | [`usb-hid-s3/`](usb-hid-s3/) | ESP32-S3 firmware (USB HID + WiFi REST + Soft-AP + mDNS) |
+| [`ios/`](ios/) | **Mouse Mover** iOS companion app (SwiftUI, Bonjour discovery, REST control) |
 
 ## CI
 
