@@ -36,6 +36,3 @@ Joining `usb-hid-s3-XXXX` via `WifiNetworkSpecifier` is **not reliable on the em
 
 LAN/Soft-AP control is unauthenticated unless firmware `CONTROL_API_TOKEN` is set. Prefer that on shared networks. See root [`SECURITY.md`](../SECURITY.md).
 
-## Progress
-
-See [`PROGRESS.md`](PROGRESS.md).
