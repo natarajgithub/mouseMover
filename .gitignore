@@ -15,6 +15,7 @@
 # Local lab notes (not published)
 **/docs/PHASE_LOG.md
 **/docs/ISSUES.md
+**/PROGRESS.md
 
 # Build / test artifacts
 **/.pio/
@@ -46,3 +47,11 @@
 **/.gradle/
 **/local.properties
 **/captures/
+
+# Android
+android/.gradle/
+android/**/build/
+android/local.properties
+android/*.iml
+android/captures/
+
