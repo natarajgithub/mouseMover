@@ -17,6 +17,12 @@
 		A10000000000000000000008 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000008 /* HomeViewModel.swift */; };
 		A10000000000000000000009 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000009 /* Assets.xcassets */; };
 		A10000000000000000000010 /* DeviceAPIClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000010 /* DeviceAPIClientTests.swift */; };
+		A10000000000000000000011 /* DeviceEndpointResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000014 /* DeviceEndpointResolver.swift */; };
+		A10000000000000000000012 /* DeviceRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000015 /* DeviceRepository.swift */; };
+		A10000000000000000000013 /* DeviceDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000016 /* DeviceDetailView.swift */; };
+		A10000000000000000000014 /* AddByAddressSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000017 /* AddByAddressSheet.swift */; };
+		A10000000000000000000015 /* MockAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000018 /* MockAPIClient.swift */; };
+		A10000000000000000000016 /* DeviceRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000019 /* DeviceRepositoryTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -43,6 +49,12 @@
 		A20000000000000000000010 /* DeviceAPIClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceAPIClientTests.swift; sourceTree = "<group>"; };
 		A20000000000000000000012 /* MouseMover.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MouseMover.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A20000000000000000000013 /* MouseMoverTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MouseMoverTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A20000000000000000000014 /* DeviceEndpointResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceEndpointResolver.swift; sourceTree = "<group>"; };
+		A20000000000000000000015 /* DeviceRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceRepository.swift; sourceTree = "<group>"; };
+		A20000000000000000000016 /* DeviceDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceDetailView.swift; sourceTree = "<group>"; };
+		A20000000000000000000017 /* AddByAddressSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddByAddressSheet.swift; sourceTree = "<group>"; };
+		A20000000000000000000018 /* MockAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockAPIClient.swift; sourceTree = "<group>"; };
+		A20000000000000000000019 /* DeviceRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceRepositoryTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -77,6 +89,7 @@
 			children = (
 				A20000000000000000000001 /* MouseMoverApp.swift */,
 				A20000000000000000000002 /* ContentView.swift */,
+				A70000000000000000000009 /* Views */,
 				A70000000000000000000005 /* Models */,
 				A70000000000000000000006 /* Services */,
 				A70000000000000000000007 /* Persistence */,
@@ -91,6 +104,8 @@
 			isa = PBXGroup;
 			children = (
 				A20000000000000000000010 /* DeviceAPIClientTests.swift */,
+				A20000000000000000000018 /* MockAPIClient.swift */,
+				A20000000000000000000019 /* DeviceRepositoryTests.swift */,
 			);
 			path = MouseMoverTests;
 			sourceTree = "<group>";
@@ -108,14 +123,25 @@
 			isa = PBXGroup;
 			children = (
 				A20000000000000000000003 /* Device.swift */,
+				A20000000000000000000014 /* DeviceEndpointResolver.swift */,
 			);
 			path = Models;
+			sourceTree = "<group>";
+		};
+		A70000000000000000000009 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				A20000000000000000000016 /* DeviceDetailView.swift */,
+				A20000000000000000000017 /* AddByAddressSheet.swift */,
+			);
+			path = Views;
 			sourceTree = "<group>";
 		};
 		A70000000000000000000006 /* Services */ = {
 			isa = PBXGroup;
 			children = (
 				A20000000000000000000004 /* DeviceAPIClient.swift */,
+				A20000000000000000000015 /* DeviceRepository.swift */,
 				A20000000000000000000005 /* BonjourBrowser.swift */,
 				A20000000000000000000006 /* SoftAPJoiner.swift */,
 			);
@@ -245,6 +271,10 @@
 				A10000000000000000000006 /* SoftAPJoiner.swift in Sources */,
 				A10000000000000000000007 /* DeviceStore.swift in Sources */,
 				A10000000000000000000008 /* HomeViewModel.swift in Sources */,
+				A10000000000000000000011 /* DeviceEndpointResolver.swift in Sources */,
+				A10000000000000000000012 /* DeviceRepository.swift in Sources */,
+				A10000000000000000000013 /* DeviceDetailView.swift in Sources */,
+				A10000000000000000000014 /* AddByAddressSheet.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -253,6 +283,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				A10000000000000000000010 /* DeviceAPIClientTests.swift in Sources */,
+				A10000000000000000000015 /* MockAPIClient.swift in Sources */,
+				A10000000000000000000016 /* DeviceRepositoryTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
