@@ -7,14 +7,16 @@ import com.mkflabs.mousemover.data.DeviceRepository
 import com.mkflabs.mousemover.data.StoredDeviceEntity
 import com.mkflabs.mousemover.network.DevicePresenceStatus
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class DeviceDetailViewModel(
     private val repository: DeviceRepository,
     private val deviceId: String,
-    private val initiallyOffline: Boolean,
 ) : ViewModel() {
     private val _device = MutableStateFlow<StoredDeviceEntity?>(null)
     val device: StateFlow<StoredDeviceEntity?> = _device.asStateFlow()
@@ -25,7 +27,7 @@ class DeviceDetailViewModel(
     private val _apiToken = MutableStateFlow("")
     val apiToken: StateFlow<String> = _apiToken.asStateFlow()
 
-    private val _offline = MutableStateFlow(initiallyOffline)
+    private val _offline = MutableStateFlow(true)
     val offline: StateFlow<Boolean> = _offline.asStateFlow()
 
     private val _error = MutableStateFlow<String?>(null)
@@ -34,15 +36,25 @@ class DeviceDetailViewModel(
     private val _deleted = MutableStateFlow(false)
     val deleted: StateFlow<Boolean> = _deleted.asStateFlow()
 
-    init {
-        viewModelScope.launch { reload() }
-    }
+    val presence: StateFlow<DevicePresenceStatus> =
+        combine(_device, _offline) { device, offline ->
+            if (device == null) {
+                DevicePresenceStatus.OFFLINE
+            } else {
+                DevicePresenceStatus.resolve(
+                    isReachable = !offline,
+                    jiggleEnabled = device.jiggleEnabled,
+                    staIp = device.staIp,
+                )
+            }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DevicePresenceStatus.OFFLINE)
 
-    val presence: DevicePresenceStatus
-        get() {
-            val d = _device.value ?: return DevicePresenceStatus.OFFLINE
-            return DevicePresenceStatus.resolve(!_offline.value, d.jiggleEnabled, d.staIp)
+    init {
+        viewModelScope.launch {
+            reload()
+            refreshReachability()
         }
+    }
 
     fun updateDisplayName(value: String) {
         _displayName.value = value
@@ -94,16 +106,22 @@ class DeviceDetailViewModel(
         }
     }
 
+    private suspend fun refreshReachability() {
+        val current = _device.value ?: return
+        val failed = repository.refreshAll(listOf(current))
+        _offline.value = failed.contains(deviceId)
+        reload()
+    }
+
     companion object {
         fun factory(
             repository: DeviceRepository,
             deviceId: String,
-            offline: Boolean,
         ): ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T =
-                    DeviceDetailViewModel(repository, deviceId, offline) as T
+                    DeviceDetailViewModel(repository, deviceId) as T
             }
     }
 }

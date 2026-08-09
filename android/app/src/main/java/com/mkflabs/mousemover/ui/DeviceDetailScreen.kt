@@ -50,8 +50,8 @@ fun DeviceDetailScreen(
     val apiToken by viewModel.apiToken.collectAsState()
     val error by viewModel.error.collectAsState()
     val deleted by viewModel.deleted.collectAsState()
+    val presence by viewModel.presence.collectAsState()
     var confirmDelete by remember { mutableStateOf(false) }
-    val presence = viewModel.presence
 
     LaunchedEffect(deleted) {
         if (deleted) onBack()
