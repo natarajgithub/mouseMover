@@ -51,6 +51,21 @@ CI runs the same `xcodebuild test` path on `macos-15` (skips gracefully if `ios/
 
 See [`ios/README.md`](ios/README.md) for Simulator vs device notes (Hotspot Configuration entitlement for Soft-AP wizard).
 
+### Android companion (`android/`)
+
+Requires JDK 17 + Android SDK 35. From the repo root:
+
+```bash
+cd android
+./gradlew :app:testDebugUnitTest
+./gradlew :app:assembleDebug
+./gradlew :app:installDebug   # emulator or device
+```
+
+CI runs unit tests + `assembleDebug` on `ubuntu-latest` (skips if `android/` is absent). Soft-AP join needs a physical device; emulator uses Continue-after-manual Wi‑Fi.
+
+See [`android/README.md`](android/README.md).
+
 ## What not to commit
 
 - `include/wifi_secrets.h`, `config.env`, `.env`, keys, PEM/P12 files
