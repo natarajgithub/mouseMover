@@ -20,6 +20,9 @@ struct ContentView: View {
             }
             .navigationTitle("Mouse Mover")
             .toolbar { toolbarContent }
+            .task(id: storedDevices.map(\.deviceId)) {
+                await viewModel.refreshAll(devices: storedDevices, context: modelContext)
+            }
             .refreshable {
                 await viewModel.refreshAll(devices: storedDevices, context: modelContext)
             }
@@ -30,7 +33,6 @@ struct ContentView: View {
             }
             .sheet(isPresented: $showAddByAddress) {
                 AddByAddressSheet()
-                    .environmentObject(viewModel)
             }
             .sheet(isPresented: $showAddWizard) {
                 AddDeviceWizardView()
@@ -46,7 +48,11 @@ struct ContentView: View {
             } label: {
                 DeviceRowView(
                     device: device,
-                    isOffline: viewModel.offlineDeviceIds.contains(device.deviceId),
+                    presence: DevicePresenceStatus.resolve(
+                        isReachable: !viewModel.offlineDeviceIds.contains(device.deviceId),
+                        jiggleEnabled: device.jiggleEnabled,
+                        staIP: device.staIP
+                    ),
                     jiggleBinding: jiggleBinding(for: device)
                 )
             }
@@ -119,31 +125,29 @@ struct ContentView: View {
 
 private struct DeviceRowView: View {
     let device: StoredDevice
-    let isOffline: Bool
+    let presence: DevicePresenceStatus
     @Binding var jiggleBinding: Bool
 
     var body: some View {
-        HStack {
+        HStack(spacing: 12) {
+            Circle()
+                .fill(presence.ledColor)
+                .frame(width: 10, height: 10)
+                .accessibilityHidden(true)
+
             VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 6) {
-                    Text(device.displayName)
-                        .font(.headline)
-                    if isOffline {
-                        Text("Offline")
-                            .font(.caption2)
-                            .fontWeight(.semibold)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(.red.opacity(0.15))
-                            .foregroundStyle(.red)
-                            .clipShape(Capsule())
-                    }
-                }
-                Text(subtitle)
+                Text(device.displayName)
+                    .font(.headline)
+                Text(presence.title)
                     .font(.subheadline)
+                    .foregroundStyle(presence.ledColor)
+                Text(subtitle)
+                    .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("\(device.displayName), \(presence.title)")
 
             Spacer()
 

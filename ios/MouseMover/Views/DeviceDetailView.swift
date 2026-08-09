@@ -13,9 +13,21 @@ struct DeviceDetailView: View {
 
     var body: some View {
         Form {
-            Section("Display Name") {
+            Section("Friendly name") {
                 TextField("Name", text: $displayName)
                     .onSubmit { saveDisplayName() }
+            }
+
+            Section("Status") {
+                HStack(spacing: 8) {
+                    Circle()
+                        .fill(presence.ledColor)
+                        .frame(width: 10, height: 10)
+                        .accessibilityHidden(true)
+                    Text(presence.title)
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Status \(presence.title)")
             }
 
             Section("Device") {
@@ -23,14 +35,11 @@ struct DeviceDetailView: View {
                 if let version = device.firmwareVersion {
                     LabeledContent("Firmware", value: version)
                 }
-                LabeledContent("mDNS", value: device.mdnsHost)
-                if let staIP = device.staIP {
-                    LabeledContent("STA IP", value: staIP)
-                }
-                if let lastSeen = device.lastSeen {
-                    LabeledContent("Last Seen") {
-                        Text(lastSeen, style: .relative)
-                    }
+                LabeledContent("Hostname", value: device.mdnsHost)
+                if let staIP = device.staIP,
+                   DeviceEndpointResolver.sanitizeHost(staIP)
+                    != DeviceEndpointResolver.sanitizeHost(device.mdnsHost) {
+                    LabeledContent("IP", value: staIP)
                 }
             }
 
@@ -61,18 +70,22 @@ struct DeviceDetailView: View {
             saveDisplayName()
             saveApiToken()
         }
-        .confirmationDialog(
-            "Delete this device?",
-            isPresented: $showDeleteConfirmation,
-            titleVisibility: .visible
-        ) {
+        .alert("Delete this device?", isPresented: $showDeleteConfirmation) {
             Button("Delete", role: .destructive) {
                 deleteDevice()
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("This removes the device from your saved list.")
+            Text("This removes it from your saved list on this iPhone.")
         }
+    }
+
+    private var presence: DevicePresenceStatus {
+        DevicePresenceStatus.resolve(
+            isReachable: !viewModel.offlineDeviceIds.contains(device.deviceId),
+            jiggleEnabled: device.jiggleEnabled,
+            staIP: device.staIP
+        )
     }
 
     private var jiggleBinding: Binding<Bool> {

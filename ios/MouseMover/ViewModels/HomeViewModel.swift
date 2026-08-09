@@ -41,12 +41,6 @@ final class HomeViewModel: ObservableObject {
         }
     }
 
-    func addByAddress(host: String, token: String?, context: ModelContext) async throws {
-        let repository = DeviceRepository(context: context)
-        _ = try await repository.addByAddress(host: host, token: token, api: apiClient)
-        errorMessage = nil
-    }
-
     #if DEBUG
     func addSampleDevice(context: ModelContext) throws {
         let sample = StoredDevice(

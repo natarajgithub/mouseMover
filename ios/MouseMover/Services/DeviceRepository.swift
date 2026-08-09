@@ -4,6 +4,7 @@ import SwiftData
 enum DeviceRepositoryError: Error, LocalizedError {
     case deviceUnreachable
     case notFound
+    case alreadyExists(displayName: String)
 
     var errorDescription: String? {
         switch self {
@@ -11,6 +12,8 @@ enum DeviceRepositoryError: Error, LocalizedError {
             "Could not reach the device on the local network."
         case .notFound:
             "Device not found."
+        case let .alreadyExists(displayName):
+            SavedDeviceIndex.alreadyExistsMessage(displayName: displayName)
         }
     }
 }
@@ -82,6 +85,11 @@ final class DeviceRepository {
         token: String?,
         api: any DeviceAPIClientProtocol
     ) async throws -> StoredDevice {
+        let index = SavedDeviceIndex(devices: try fetchAll())
+        if let existing = index.match(status: status, host: fallbackHost) {
+            throw DeviceRepositoryError.alreadyExists(displayName: existing.displayName)
+        }
+
         let deviceId = status.deviceId ?? fallbackHost
         var device = Device(status: status, fallbackHost: fallbackHost)
         device.displayName = displayName
@@ -94,28 +102,35 @@ final class DeviceRepository {
         return stored
     }
 
-    func addByAddress(host: String, token: String?, api: any DeviceAPIClientProtocol) async throws -> StoredDevice {
+    /// Probes a host without saving. Throws `alreadyExists` when the device is already saved.
+    func probeByAddress(
+        host: String,
+        token: String?,
+        api: any DeviceAPIClientProtocol
+    ) async throws -> ProbedDevice {
         let urls = DeviceEndpointResolver.endpointURLs(mdnsHost: host, staIP: nil)
         guard !urls.isEmpty else { throw DeviceRepositoryError.deviceUnreachable }
 
+        let index = SavedDeviceIndex(devices: try fetchAll())
         var lastError: Error = DeviceRepositoryError.deviceUnreachable
+
         for url in urls {
             do {
                 let status = try await api.status(baseURL: url, token: token)
                 let fallbackHost = url.host ?? host
-                let deviceId = status.deviceId ?? fallbackHost
-                var device = Device(status: status, fallbackHost: fallbackHost)
-                device.apiToken = token
-
-                if let existing = try fetchStored(deviceId: deviceId) {
-                    device.displayName = existing.displayName
+                if let existing = index.match(status: status, host: fallbackHost) {
+                    throw DeviceRepositoryError.alreadyExists(displayName: existing.displayName)
                 }
-
-                try DeviceStore.upsert(device, in: context)
-                guard let stored = try fetchStored(deviceId: deviceId) else {
-                    throw DeviceRepositoryError.notFound
-                }
-                return stored
+                let candidate = DiscoveredService(
+                    id: "manual-\(fallbackHost)",
+                    deviceId: status.deviceId,
+                    name: status.name,
+                    host: fallbackHost,
+                    port: url.port ?? 80
+                )
+                return ProbedDevice(candidate: candidate, status: status, baseURL: url)
+            } catch let error as DeviceRepositoryError {
+                throw error
             } catch {
                 lastError = error
             }
@@ -169,6 +184,10 @@ final class DeviceRepository {
         stored.jiggleEnabled = status.jiggle
         stored.lastSeen = Date()
         stored.firmwareVersion = status.version
+    }
+
+    private func fetchAll() throws -> [StoredDevice] {
+        try context.fetch(FetchDescriptor<StoredDevice>())
     }
 
     private func fetchStored(deviceId: String) throws -> StoredDevice? {

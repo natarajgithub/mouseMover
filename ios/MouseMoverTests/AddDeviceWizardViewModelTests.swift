@@ -57,6 +57,67 @@ final class AddDeviceWizardViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.candidates.first?.host, "hid-helper.local")
     }
 
+    func testNewCandidatesHidesAlreadySavedDevices() async {
+        let known = StoredDevice(
+            deviceId: "dev-001",
+            displayName: "Desk",
+            mdnsHost: "hid-helper.local",
+            staIP: "192.168.2.161"
+        )
+        viewModel.updateKnownDevices([known])
+        viewModel.chooseScan()
+
+        mockBrowser.emit([
+            DiscoveredService(
+                id: "1",
+                deviceId: "dev-001",
+                name: "hid-helper-001",
+                host: "192.168.2.161",
+                port: 80
+            ),
+            DiscoveredService(
+                id: "2",
+                deviceId: "dev-002",
+                name: "hid-helper-002",
+                host: "192.168.2.162",
+                port: 80
+            )
+        ])
+        await Task.yield()
+
+        XCTAssertEqual(viewModel.candidates.count, 2)
+        XCTAssertEqual(viewModel.newCandidates.count, 1)
+        XCTAssertEqual(viewModel.newCandidates.first?.deviceId, "dev-002")
+        XCTAssertTrue(viewModel.hasHiddenKnownCandidates)
+    }
+
+    func testSelectCandidateRejectsAlreadySavedDevice() async {
+        viewModel.updateKnownDevices([
+            StoredDevice(
+                deviceId: "abcd1234efgh",
+                displayName: "Desk",
+                mdnsHost: "hid-helper.local"
+            )
+        ])
+        viewModel.chooseScan()
+
+        let service = DiscoveredService(
+            id: "hid-helper._http._tcp.local.",
+            deviceId: "abcd1234efgh",
+            name: "hid-helper",
+            host: "hid-helper.local",
+            port: 80
+        )
+
+        await viewModel.selectCandidate(service)
+
+        XCTAssertEqual(viewModel.step, .scanning)
+        XCTAssertEqual(
+            viewModel.errorMessage,
+            SavedDeviceIndex.alreadyExistsMessage(displayName: "Desk")
+        )
+    }
+
     func testSelectCandidateProbesAndMovesToConfirm() async {
         viewModel.chooseScan()
 

@@ -41,6 +41,9 @@ final class AddDeviceWizardViewModel: ObservableObject {
     @Published private(set) var expectedDeviceId: String?
     @Published private(set) var probedWifiStatus: WifiStatus?
 
+    /// Saved devices used to hide duplicates from scan results and reject re-adds.
+    @Published private(set) var knownDevices = SavedDeviceIndex.empty
+
     private let browser: any BonjourBrowserProtocol
     private let apiClient: any DeviceAPIClientProtocol
     private let softAPJoiner: any SoftAPJoinerProtocol
@@ -55,6 +58,10 @@ final class AddDeviceWizardViewModel: ObservableObject {
         self.softAPJoiner = softAPJoiner
     }
 
+    func updateKnownDevices(_ devices: [StoredDevice]) {
+        knownDevices = SavedDeviceIndex(devices: devices)
+    }
+
     var probedDevice: ProbedDevice? {
         if case let .confirm(device) = step {
             return device
@@ -66,10 +73,25 @@ final class AddDeviceWizardViewModel: ObservableObject {
         probedDevice?.status.authRequired == true
     }
 
+    /// Candidates for Soft-AP rediscovery (optionally filtered to expected device id).
     var filteredCandidates: [DiscoveredService] {
-        guard let expectedDeviceId else { return candidates }
-        let matches = candidates.filter { $0.deviceId == expectedDeviceId }
-        return matches.isEmpty ? candidates : matches
+        let base: [DiscoveredService]
+        if let expectedDeviceId {
+            let matches = candidates.filter { $0.deviceId == expectedDeviceId }
+            base = matches.isEmpty ? candidates : matches
+        } else {
+            base = candidates
+        }
+        return base.filter { knownDevices.match(candidate: $0) == nil }
+    }
+
+    /// Scan-network list excludes devices already saved.
+    var newCandidates: [DiscoveredService] {
+        candidates.filter { knownDevices.match(candidate: $0) == nil }
+    }
+
+    var hasHiddenKnownCandidates: Bool {
+        !candidates.isEmpty && newCandidates.count < candidates.count
     }
 
     func chooseScan() {
@@ -241,6 +263,11 @@ final class AddDeviceWizardViewModel: ObservableObject {
         errorMessage = nil
         defer { isProbing = false }
 
+        if let existing = knownDevices.match(candidate: candidate) {
+            errorMessage = SavedDeviceIndex.alreadyExistsMessage(displayName: existing.displayName)
+            return
+        }
+
         guard let baseURL = Self.baseURL(for: candidate) else {
             errorMessage = "Could not build a URL for this device."
             return
@@ -250,6 +277,10 @@ final class AddDeviceWizardViewModel: ObservableObject {
             let status = try await apiClient.status(baseURL: baseURL, token: nil)
             if let expectedDeviceId, let deviceId = status.deviceId, deviceId != expectedDeviceId {
                 errorMessage = "This device does not match the one you provisioned."
+                return
+            }
+            if let existing = knownDevices.match(status: status, host: candidate.host) {
+                errorMessage = SavedDeviceIndex.alreadyExistsMessage(displayName: existing.displayName)
                 return
             }
             displayName = Self.defaultDisplayName(for: status)

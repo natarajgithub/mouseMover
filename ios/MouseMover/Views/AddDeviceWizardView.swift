@@ -4,6 +4,7 @@ import SwiftUI
 struct AddDeviceWizardView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Query private var storedDevices: [StoredDevice]
     @StateObject private var viewModel = AddDeviceWizardViewModel()
 
     var body: some View {
@@ -31,12 +32,16 @@ struct AddDeviceWizardView: View {
             .navigationTitle(navigationTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { wizardToolbar }
-            .alert("Error", isPresented: errorAlertBinding) {
+            .alert("Notice", isPresented: errorAlertBinding) {
                 Button("OK") { viewModel.errorMessage = nil }
             } message: {
                 Text(viewModel.errorMessage ?? "")
             }
             .interactiveDismissDisabled(viewModel.isProbing || viewModel.isSaving || viewModel.isJoining || viewModel.isProvisioning)
+            .onAppear { viewModel.updateKnownDevices(storedDevices) }
+            .onChange(of: storedDevices.map(\.deviceId)) { _, _ in
+                viewModel.updateKnownDevices(storedDevices)
+            }
         }
     }
 
@@ -115,9 +120,11 @@ struct AddDeviceWizardView: View {
 
     private var scanningStep: some View {
         discoveryList(
-            candidates: viewModel.candidates,
-            emptyTitle: "Scanning…",
-            emptyDescription: "Looking for Mouse Helpers on your local network."
+            candidates: viewModel.newCandidates,
+            emptyTitle: viewModel.hasHiddenKnownCandidates ? "Already Added" : "Scanning…",
+            emptyDescription: viewModel.hasHiddenKnownCandidates
+                ? "All Mouse Helpers found on the network are already in your device list."
+                : "Looking for Mouse Helpers on your local network."
         )
     }
 
@@ -360,35 +367,12 @@ struct AddDeviceWizardView: View {
     @ViewBuilder
     private var confirmStep: some View {
         if let probed = viewModel.probedDevice {
-            Form {
-                Section("Device") {
-                    LabeledContent("Name", value: probed.status.name)
-                    LabeledContent("Version", value: probed.status.version)
-                    if let deviceId = probed.status.deviceId {
-                        LabeledContent("Device ID", value: deviceId)
-                    }
-                    if let staIP = probed.status.staIp {
-                        LabeledContent("IP", value: staIP)
-                    }
-                    LabeledContent("Host", value: probed.candidate.host)
-                }
-
-                Section {
-                    TextField("Display Name", text: $viewModel.displayName)
-                } footer: {
-                    Text("Shown in your device list on this iPhone.")
-                }
-
-                if viewModel.showsAuthTokenField {
-                    Section {
-                        TextField("API Token", text: $viewModel.apiToken)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                    } footer: {
-                        Text("This device requires an API token for control.")
-                    }
-                }
-            }
+            ConfirmDeviceForm(
+                probed: probed,
+                displayName: $viewModel.displayName,
+                apiToken: $viewModel.apiToken,
+                showsAuthTokenField: viewModel.showsAuthTokenField
+            )
         }
     }
 
