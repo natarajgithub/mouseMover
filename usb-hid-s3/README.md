@@ -7,13 +7,12 @@ for remote control.
 
 ## Hardware
 
-- Waveshare ESP32-S3-Zero / Mini (4 MB flash, ESP32-S3FH4R2) — confirm with
-  `esptool flash-id`.
-- Flash via the native USB port. In USB-OTG mode auto-reset fails, so flashing is a
-  two-step manual dance: (1) enter download mode — hold **BOOT**, tap **RESET**,
-  release **BOOT** (or unplug, hold BOOT, replug, release); (2) after upload,
-  **power-cycle** (unplug/replug) to boot the app into OTG so it enumerates as HID.
-  `scripts/flash_and_verify.sh` automates the wait + verify around both steps.
+See [`docs/HARDWARE.md`](docs/HARDWARE.md) for the BOM, Amazon purchase link, LED
+legend, and flash procedure.
+
+Summary: **Waveshare ESP32-S3-Zero / Mini** (ESP32-S3FH4R2, 4 MB flash). Flash
+needs **BOOT+RESET**, then a **power-cycle** so the device enumerates as
+VID `0xCAFE` (not Espressif JTAG `0x303A`).
 
 ## Layout
 
@@ -26,7 +25,9 @@ usb-hid-s3/
   test/               # PlatformIO native unit tests (pio test -e native)
   tests/              # pytest integration + on-Mac E2E
   scripts/            # deploy.sh, serial_monitor.sh, e2e.sh, install_test_deps.sh
-  docs/openapi.yaml   # HTTP REST OpenAPI 3 spec
+  docs/openapi.yaml          # HTTP REST OpenAPI 3 spec
+  docs/HARDWARE.md           # BOM + flash notes
+  docs/KNOWN_LIMITATIONS.md  # auth, VID, platform caveats
 ```
 
 ## Quick start
