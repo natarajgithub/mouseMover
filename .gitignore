@@ -12,6 +12,10 @@
 **/*.p12
 **/credentials.json
 
+# Local lab notes (not published)
+**/docs/PHASE_LOG.md
+**/docs/ISSUES.md
+
 # Build / test artifacts
 **/.pio/
 **/.pioenvs/

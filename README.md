@@ -4,15 +4,13 @@
 [![Firmware + unit tests](https://img.shields.io/github/actions/workflow/status/natarajgithub/mouseMover/ci.yml?branch=main&job=Native%20unit%20tests%20%2B%20firmware%20build&label=firmware%20%2B%20unit%20tests)](https://github.com/natarajgithub/mouseMover/actions/workflows/ci.yml)
 [![OpenAPI](https://img.shields.io/github/actions/workflow/status/natarajgithub/mouseMover/ci.yml?branch=main&job=OpenAPI%20lint&label=OpenAPI)](https://github.com/natarajgithub/mouseMover/actions/workflows/ci.yml)
 
-USB HID mouse/keyboard helper (ESP32-S3) plus companion apps.
+USB HID mouse/keyboard helper firmware for ESP32-S3 (native USB + WiFi REST).
 
 ## Layout
 
 | Folder | Purpose |
 |--------|---------|
 | [`usb-hid-s3/`](usb-hid-s3/) | ESP32-S3 firmware (USB HID + WiFi REST + Soft-AP setup + mDNS) |
-| `ios/` | iOS app (planned) |
-| `android/` | Android app (planned) |
 
 ## Firmware quick start
 

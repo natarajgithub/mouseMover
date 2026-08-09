@@ -3,15 +3,12 @@
 A composite **USB HID mouse + keyboard** device on the ESP32-S3 (native USB-OTG
 via the ESP32 core USB stack — `USBHIDMouse` + `USBHIDKeyboard` + `USBCDC`), with
 USB-CDC serial logging/commands, and mutually exclusive WiFi *or* BLE connectivity
-for future remote control (e.g. an iOS app).
-
-This is the successor to `../legacy-ble-c6` (ESP32-C6 BLE-HID mouse jiggler +
-AWS IoT). Lessons and reusable tooling were carried over; the HID transport
-moved from BLE to native USB.
+for remote control.
 
 ## Hardware
 
-- Waveshare ESP32-S3-Zero (4 MB flash) — confirm with `scripts` / `esptool flash-id`.
+- Waveshare ESP32-S3-Zero / Mini (4 MB flash, ESP32-S3FH4R2) — confirm with
+  `esptool flash-id`.
 - Flash via the native USB port. In USB-OTG mode auto-reset fails, so flashing is a
   two-step manual dance: (1) enter download mode — hold **BOOT**, tap **RESET**,
   release **BOOT** (or unplug, hold BOOT, replug, release); (2) after upload,
@@ -29,7 +26,7 @@ usb-hid-s3/
   test/               # PlatformIO native unit tests (pio test -e native)
   tests/              # pytest integration + on-Mac E2E
   scripts/            # deploy.sh, serial_monitor.sh, e2e.sh, install_test_deps.sh
-  docs/PHASE_LOG.md   # per-phase implementation + test results
+  docs/openapi.yaml   # HTTP REST OpenAPI 3 spec
 ```
 
 ## Quick start
@@ -90,4 +87,4 @@ E2E on macOS uses `system_profiler`/`ioreg`/`hidutil` to verify enumeration and 
 pyobjc `CGEventTap` to confirm the cursor actually moves and keystrokes arrive.
 Grant your terminal **Input Monitoring** and **Accessibility** permission.
 
-See `docs/PHASE_LOG.md` for detailed build/test history.
+Cloud CI runs only the native unit tests + firmware compile (no Mac / no board).

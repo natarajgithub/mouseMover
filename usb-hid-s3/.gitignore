@@ -15,6 +15,10 @@ tests/output/
 __pycache__/
 *.pyc
 
+# Local lab notes (not published)
+docs/PHASE_LOG.md
+docs/ISSUES.md
+
 # Editor / OS
 .vscode/
 .DS_Store
