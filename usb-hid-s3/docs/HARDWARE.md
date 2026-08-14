@@ -4,6 +4,8 @@
 
 **Waveshare ESP32-S3-Zero / Mini** (ESP32-S3FH4R2):
 
+![Waveshare ESP32-S3-Zero with USB-C connected](../../docs/images/esp32-s3-zero.jpg)
+
 - Dual-core Xtensa LX7 up to 240 MHz
 - 4 MB flash, 2 MB PSRAM
 - Native USB-OTG (USB-C)
