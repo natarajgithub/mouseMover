@@ -2,6 +2,12 @@
 
 SwiftUI companion app for discovering and controlling **mouseMover** ESP32-S3 devices over the local network.
 
+<p align="center">
+  <img src="../docs/images/ios-device-list.jpg" alt="Device list with two online hid-helpers" width="240">
+  &nbsp;
+  <img src="../docs/images/ios-device-detail.jpg" alt="Device detail: friendly name, status, firmware, jiggle" width="240">
+</p>
+
 ## Security
 
 **LAN and Soft-AP control can move the mouse and type on the host PC** attached to the device. Anyone on the same Wi‑Fi (or on the device’s open setup network during provisioning) can call the REST API unless you harden the firmware.

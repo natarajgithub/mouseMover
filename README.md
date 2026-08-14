@@ -22,6 +22,10 @@ keyboard (**hid-helper**), with optional WiFi/BLE remote control.
 Supported board: **Waveshare ESP32-S3-Zero / Mini** (ESP32-S3FH4R2, 4 MB flash,
 WS2812 on GPIO21).
 
+<p align="center">
+  <img src="docs/images/esp32-s3-zero.jpg" alt="Waveshare ESP32-S3-Zero with USB-C connected" width="360">
+</p>
+
 - Buy example: [Amazon listing](https://a.co/d/0fwrWUFU)
 - Details: [`usb-hid-s3/docs/HARDWARE.md`](usb-hid-s3/docs/HARDWARE.md)
 
@@ -45,6 +49,12 @@ OpenAPI: [`usb-hid-s3/docs/openapi.yaml`](usb-hid-s3/docs/openapi.yaml)
 
 - **[iOS Mouse Mover](ios/)** — SwiftUI; Bonjour, Soft-AP, jiggle / rename. Firmware **0.4.0+**. See [`ios/README.md`](ios/README.md).
 - **[Android Mouse Mover](android/)** — Kotlin + Jetpack Compose; NSD, Soft-AP, same REST. Firmware **0.4.0+**. See [`android/README.md`](android/README.md).
+
+<p align="center">
+  <img src="docs/images/ios-device-list.jpg" alt="iOS Mouse Mover device list showing two online hid-helpers" width="240">
+  &nbsp;
+  <img src="docs/images/ios-device-detail.jpg" alt="iOS device detail for Mover 1 with firmware 0.4.0 and jiggle toggle" width="240">
+</p>
 
 ### 4. Platform support
 
